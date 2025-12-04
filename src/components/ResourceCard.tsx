@@ -23,6 +23,7 @@ const materialCategoryIcons: Record<MaterialCategory, typeof FileArchive> = {
   'Past Paper': FileArchive,
   'Note': FileText,
   'Textbook': BookOpen,
+  'Model Paper': FileText,
 };
 
 const sessionTypeIcons: Record<SessionType, typeof Radio> = {
@@ -34,6 +35,7 @@ const materialCategoryColors: Record<MaterialCategory, string> = {
   'Past Paper': 'bg-orange-100 text-orange-700',
   'Note': 'bg-blue-100 text-blue-700',
   'Textbook': 'bg-green-100 text-green-700',
+    'Model Paper': 'bg-purple-100 text-purple-700',
 };
 
 const sessionTypeColors: Record<SessionType, string> = {

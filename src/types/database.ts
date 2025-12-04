@@ -83,7 +83,7 @@ export const SUBJECTS: Record<Stream, string[]> = {
 
 export const LANGUAGES: Language[] = ['Sinhala', 'Tamil', 'English'];
 
-export const MATERIAL_CATEGORIES: MaterialCategory[] = ['Past Paper', 'Note', 'Textbook'];
+export const MATERIAL_CATEGORIES: MaterialCategory[] = ['Past Paper', 'Note', 'Textbook','Model Paper'];
 export const SESSION_TYPES: SessionType[] = ['Live', 'Recording'];
 
 // UI Translations
