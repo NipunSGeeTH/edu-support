@@ -76,7 +76,7 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
           <p className='text-xs'>© {new Date().getFullYear()} EduSupport. All rights reserved.</p>
-          <p className="mt-1">Rebuilding Futures Through Knowledge</p>
+          <p className="mt-1">Rebuilding Futures Through Knowledge 💖</p>
         </div>
       </div>
     </footer>
