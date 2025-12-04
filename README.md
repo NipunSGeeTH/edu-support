@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EduShare - Educational Resource Sharing Platform
+
+A free educational resource sharing platform for Sri Lankan students built with Next.js, TypeScript, Tailwind CSS, and Supabase.
+
+## Features
+
+- 📚 **Learning Materials**: Browse past papers, notes, and textbooks
+- 🎥 **Learning Sessions**: Access live classes and recorded video lessons
+- 🔍 **Smart Filtering**: Filter by Level (AL/OL), Stream, Subject, and Language
+- 🌐 **Multi-language Support**: Resources in Sinhala, Tamil, and English
+- 👥 **Contributor Portal**: Teachers can login and share resources
+- 🔐 **Google Authentication**: Secure login with Google via Supabase Auth
+
+## Tech Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth with Google OAuth
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ installed
+- A Supabase account and project
+
+### 1. Clone and Install
+
+```bash
+cd edu
+npm install
+```
+
+### 2. Configure Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **Settings > API** and copy your project URL and anon key
+3. Create `.env.local` file:
+
+```bash
+cp .env.local.example .env.local
+```
+
+4. Update `.env.local` with your Supabase credentials:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### 3. Set Up Database
+
+1. Go to your Supabase project's **SQL Editor**
+2. Copy and run the contents of `supabase/schema.sql`
+
+### 4. Configure Google OAuth
+
+1. In Supabase Dashboard, go to **Authentication > Providers**
+2. Enable **Google** provider
+3. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/)
+4. Add your credentials to Supabase
+5. Add redirect URL: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
+
+### 5. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── about/           # About page
+│   ├── auth/callback/   # OAuth callback handler
+│   ├── dashboard/       # Contributor dashboard (protected)
+│   │   ├── add/         # Add new resource
+│   │   └── manage/      # Manage resources
+│   ├── login/           # Login page
+│   ├── materials/       # Browse materials
+│   ├── sessions/        # Browse sessions
+│   ├── layout.tsx       # Root layout
+│   └── page.tsx         # Homepage
+├── components/
+│   ├── FilterSidebar.tsx
+│   ├── Footer.tsx
+│   ├── Navbar.tsx
+│   └── ResourceCard.tsx
+├── lib/
+│   └── supabase/
+│       ├── client.ts    # Browser client
+│       ├── middleware.ts
+│       └── server.ts    # Server client
+├── types/
+│   └── database.ts      # TypeScript types
+└── middleware.ts        # Auth middleware
+```
 
-## Learn More
+## User Flows
 
-To learn more about Next.js, take a look at the following resources:
+### Students (Public)
+1. Browse materials or sessions from homepage
+2. Filter by Level → Stream → Subject → Language
+3. View and access resources without logging in
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Contributors (Authenticated)
+1. Login with Google
+2. Access dashboard to view stats
+3. Add new resources (materials or sessions)
+4. Manage (edit/delete) existing resources
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Schema
 
-## Deploy on Vercel
+### Resources Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| type | TEXT | 'Material' or 'Session' |
+| category | TEXT | 'Past Paper', 'Note', 'Textbook', 'Live', 'Recording' |
+| level | TEXT | 'AL' or 'OL' |
+| stream | TEXT | 'Science', 'Arts', 'Commerce', 'Technology' |
+| subject | TEXT | Subject name |
+| language | TEXT | 'Sinhala', 'Tamil', 'English' |
+| title | TEXT | Resource title |
+| description | TEXT | Resource description |
+| url | TEXT | Link to resource |
+| contributor_id | UUID | Reference to auth.users |
+| created_at | TIMESTAMP | Creation timestamp |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import project to [Vercel](https://vercel.com)
+3. Add environment variables
+4. Deploy!
+
+### Environment Variables for Production
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_production_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_anon_key
+NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License - feel free to use this project for educational purposes.
+
+---
+
+Made with ❤️ for Sri Lankan students
