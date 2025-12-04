@@ -17,13 +17,19 @@ export default function AboutPage() {
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
           {t('about.title')}
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          {t('about.subtitle')}
-        </p>
       </div>
 
       {/* Mission Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <Target className="w-6 h-6 text-blue-600 mr-2" />
+            {t('about.vission_title')}
+          </h2>
+          <p className="text-gray-600 leading-relaxed">
+            {t('about.vission_text')}
+          </p>
+        </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
             <Target className="w-6 h-6 text-blue-600 mr-2" />
@@ -33,7 +39,7 @@ export default function AboutPage() {
             {t('about.mission_text')}
           </p>
         </div>
-        <div>
+        {/* <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
             <Heart className="w-6 h-6 text-red-500 mr-2" />
             {t('about.values_title')}
@@ -45,7 +51,7 @@ export default function AboutPage() {
             <li>✓ Community-driven platform</li>
             <li>✓ Equal opportunity for all students</li>
           </ul>
-        </div>
+        </div> */}
       </div>
 
       {/* What We Offer */}

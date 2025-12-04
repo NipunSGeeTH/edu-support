@@ -277,7 +277,7 @@ export default function SessionsPage() {
             </div>
           ) : filteredSessions.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <Video className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">{t('sessions.no_results')}</h3>
               <p className="text-gray-600">{t('sessions.no_results_hint')}</p>
             </div>
