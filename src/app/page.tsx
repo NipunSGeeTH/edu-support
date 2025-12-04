@@ -53,8 +53,8 @@ export default function Home() {
       <section className="bg-gradient-to-r from-green-500 to-emerald-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center py-2 md:py-8">
-            <p className="text-white font-medium text-center">
-              Have educational resources to share? Anyone can contribute!
+            <p className="text-white font-bold text-center">
+              Learn today, Lead tomorrow. Education changes everything
             </p>
           </div>
         </div>
