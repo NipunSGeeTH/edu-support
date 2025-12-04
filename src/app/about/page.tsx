@@ -39,19 +39,6 @@ export default function AboutPage() {
             {t('about.mission_text')}
           </p>
         </div>
-        {/* <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <Heart className="w-6 h-6 text-red-500 mr-2" />
-            {t('about.values_title')}
-          </h2>
-          <ul className="text-gray-600 space-y-2">
-            <li>✓ {t('feature.free')}</li>
-            <li>✓ Quality content curated by educators</li>
-            <li>✓ {t('feature.languages')}</li>
-            <li>✓ Community-driven platform</li>
-            <li>✓ Equal opportunity for all students</li>
-          </ul>
-        </div> */}
       </div>
 
       {/* What We Offer */}
@@ -96,10 +83,10 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t('home.features_title')}
+              {t('about.features_title')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              {t('home.features_subtitle')}
+              {t('about.features_subtitle')}
             </p>
           </div>
 
