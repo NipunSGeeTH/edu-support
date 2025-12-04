@@ -12,6 +12,8 @@ import {
   Globe,
   Shield,
   Plus,
+  Heart,
+  HandHeart,
 } from "lucide-react";
 
 export default function Home() {
@@ -130,6 +132,60 @@ export default function Home() {
               </h3>
               <p className="text-gray-600">
                 Share your educational resources with the community
+              </p>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Donation Section */}
+      <section className="py-16 bg-gradient-to-r from-orange-50 to-red-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Educational Support
+            </h2>
+            <p className="text-lg text-gray-600">
+              Give or receive educational help - books, clothes, stationery, and more
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Request Donation Card */}
+            <Link
+              href="/request-donation"
+              className="group bg-white rounded-2xl p-8 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-lg"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center">
+                  <HandHeart className="w-7 h-7 text-white" />
+                </div>
+                <ArrowRight className="w-6 h-6 text-orange-500 group-hover:translate-x-2 transition-transform" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Request Help
+              </h3>
+              <p className="text-gray-600">
+                Need educational supplies? Submit a request and let donors help you
+              </p>
+            </Link>
+
+            {/* Donate Card */}
+            <Link
+              href="/donate"
+              className="group bg-white rounded-2xl p-8 border-2 border-red-200 hover:border-red-400 transition-all hover:shadow-lg"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 bg-red-500 rounded-xl flex items-center justify-center">
+                  <Heart className="w-7 h-7 text-white" />
+                </div>
+                <ArrowRight className="w-6 h-6 text-red-500 group-hover:translate-x-2 transition-transform" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Donate to Help
+              </h3>
+              <p className="text-gray-600">
+                View requests from students and help them with educational supplies
               </p>
             </Link>
           </div>
