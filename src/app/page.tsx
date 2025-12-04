@@ -21,7 +21,7 @@ export default function Home() {
     <div>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-15 md:py-15">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               {t('home.title')}
@@ -49,20 +49,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Submit Resource Banner */}
-      <section className="bg-gradient-to-r from-green-500 to-emerald-600 py-4">
+      {/*  Resource Banner */}
+      <section className="bg-gradient-to-r from-green-500 to-emerald-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-white font-medium text-center sm:text-left">
+          <div className="flex items-center justify-center py-2 md:py-8">
+            <p className="text-white font-medium text-center">
               Have educational resources to share? Anyone can contribute!
             </p>
-            <Link
-              href="/submit"
-              className="inline-flex items-center px-4 py-2 bg-white text-green-700 rounded-lg font-semibold hover:bg-green-50 transition-colors shrink-0"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('nav.submit')}
-            </Link>
           </div>
         </div>
       </section>
@@ -82,7 +75,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Materials Card */}
             <Link
               href="/materials"
@@ -118,6 +111,25 @@ export default function Home() {
               </h3>
               <p className="text-gray-600">
                 Live classes and recorded video lessons
+              </p>
+            </Link>
+
+            {/* Submit Resource Card */}
+            <Link
+              href="/submit"
+              className="group bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-lg"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 bg-green-600 rounded-xl flex items-center justify-center">
+                  <Plus className="w-7 h-7 text-white" />
+                </div>
+                <ArrowRight className="w-6 h-6 text-green-600 group-hover:translate-x-2 transition-transform" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {t('nav.submit')}
+              </h3>
+              <p className="text-gray-600">
+                Share your educational resources with the community
               </p>
             </Link>
           </div>
