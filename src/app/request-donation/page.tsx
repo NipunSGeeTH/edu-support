@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { db } from '@/lib/firebase/config';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { 
-  DonationRequest, 
   REQUEST_CATEGORIES, 
   GRADES, 
   DISTRICTS,
@@ -18,10 +16,12 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Shield,
 } from 'lucide-react';
 
 export default function RequestDonationPage() {
   const { t } = useLanguage();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -35,6 +35,7 @@ export default function RequestDonationPage() {
     phoneNumber: '',
     category: '' as RequestCategory | '',
     description: '',
+    website: '', // Honeypot field - should always be empty
   });
 
   const handleChange = (
@@ -44,27 +45,49 @@ export default function RequestDonationPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Phone number validation
+  const isValidPhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^(?:\+94|0)?7[0-9]{8}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError(null);
 
-    try {
-      const requestData: Omit<DonationRequest, 'id'> = {
-        name: formData.name,
-        address: formData.address,
-        district: formData.district,
-        grade: formData.grade,
-        school: formData.school,
-        phoneNumber: formData.phoneNumber,
-        category: formData.category as RequestCategory,
-        description: formData.description,
-        status: 'pending',
-        createdAt: Timestamp.now() as unknown as Date,
-        updatedAt: Timestamp.now() as unknown as Date,
-      };
+    // Client-side validation
+    if (!isValidPhoneNumber(formData.phoneNumber)) {
+      setSubmitError('Please enter a valid Sri Lankan phone number (e.g., 07X XXX XXXX)');
+      setIsSubmitting(false);
+      return;
+    }
 
-      await addDoc(collection(db, 'donationRequests'), requestData);
+    try {
+      // Get reCAPTCHA token
+      let recaptchaToken = '';
+      if (executeRecaptcha) {
+        recaptchaToken = await executeRecaptcha('donation_request');
+      }
+
+      // Submit via API route (server-side validation)
+      const response = await fetch('/api/donation-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          recaptchaToken,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit request');
+      }
+
       setSubmitSuccess(true);
       setFormData({
         name: '',
@@ -75,14 +98,15 @@ export default function RequestDonationPage() {
         phoneNumber: '',
         category: '',
         description: '',
+        website: '',
       });
     } catch (error) {
       console.error('Error submitting request:', error);
-      setSubmitError('Failed to submit request. Please try again.');
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit request. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, executeRecaptcha]);
 
   if (submitSuccess) {
     return (
@@ -151,6 +175,20 @@ export default function RequestDonationPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Honeypot field - hidden from users, bots will fill it */}
+            <div className="hidden" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                type="text"
+                id="website"
+                name="website"
+                value={formData.website}
+                onChange={handleChange}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -320,6 +358,15 @@ export default function RequestDonationPage() {
                 </>
               )}
             </button>
+
+            {/* Security Notice */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+              <Shield className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-gray-700">Your information is protected</p>
+                <p>This form is protected by reCAPTCHA and rate limiting to prevent spam. We only share your contact details with verified donors.</p>
+              </div>
+            </div>
           </form>
         </div>
       </div>

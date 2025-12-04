@@ -42,41 +42,18 @@ export default function SessionsPage() {
 
       try {
         const supabase = createClient();
-        // RLS policy already filters out expired live sessions and non-approved sessions
+        // RLS policy filters out expired live sessions and non-approved sessions
+        // Sessions are filtered at database level using Sri Lankan time
         const { data, error } = await supabase
           .from('sessions')
           .select('*')
-          .eq('status', 'approved')
+          .order('session_date', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching sessions:', error);
         } else if (data) {
-          // Additional client-side filter to ensure expired sessions don't show
-          const now = new Date();
-          const filtered = data.filter(session => {
-            if (session.session_type === 'Recording') return true;
-            if (!session.session_date) return true;
-            
-            const sessionDate = new Date(session.session_date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // If session date is in the future, show it
-            if (sessionDate > today) return true;
-            
-            // If session date is today, check the end time
-            if (sessionDate.getTime() === today.getTime() && session.end_time) {
-              const [hours, minutes] = session.end_time.split(':').map(Number);
-              const endDateTime = new Date(sessionDate);
-              endDateTime.setHours(hours, minutes);
-              return now < endDateTime;
-            }
-            
-            return sessionDate >= today;
-          });
-          
-          setSessions(filtered);
+          setSessions(data);
         }
       } catch (err) {
         console.error('Error:', err);
@@ -161,10 +138,12 @@ export default function SessionsPage() {
 
   const isUpcoming = (session: Session) => {
     if (session.session_type !== 'Live' || !session.session_date) return false;
-    const sessionDate = new Date(session.session_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return sessionDate >= today;
+    
+    // Get current date in Sri Lanka
+    const sriLankaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }); // YYYY-MM-DD format
+    
+    // Session is upcoming if it's today or in the future
+    return session.session_date >= sriLankaDate;
   };
 
   return (
