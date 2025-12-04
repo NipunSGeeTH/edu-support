@@ -51,36 +51,36 @@ export default function AboutPage() {
       {/* What We Offer */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-16">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-          What We Offer
+          {t('about.what_we_offer')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">📄</span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Past Papers</h3>
-            <p className="text-sm text-gray-600">Previous exam papers with marking schemes</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('about.past_papers_title')}</h3>
+            <p className="text-sm text-gray-600">{t('about.past_papers_detail')}</p>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">📝</span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Notes</h3>
-            <p className="text-sm text-gray-600">Comprehensive study notes by educators</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('about.notes_title')}</h3>
+            <p className="text-sm text-gray-600">{t('about.notes_detail')}</p>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">📚</span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Textbooks</h3>
-            <p className="text-sm text-gray-600">Reference textbooks and guides</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('about.textbooks_title')}</h3>
+            <p className="text-sm text-gray-600">{t('about.textbooks_detail')}</p>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">🎥</span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Video Sessions</h3>
-            <p className="text-sm text-gray-600">Live and recorded video lessons</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('about.video_sessions_title')}</h3>
+            <p className="text-sm text-gray-600">{t('about.video_sessions_detail')}</p>
           </div>
         </div>
       </div>
@@ -188,12 +188,10 @@ export default function AboutPage() {
           <Users className="w-12 h-12 text-blue-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-          For Contributors
+          {t('about.contributors_title')}
         </h2>
         <p className="text-gray-600 text-center max-w-2xl mx-auto mb-6">
-          Are you a teacher, educator, or subject expert? Join our community of contributors
-          and help thousands of students succeed. Share your notes, past papers, and
-          educational content with students across Sri Lanka.
+          {t('about.contributors_text')}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
@@ -201,13 +199,13 @@ export default function AboutPage() {
             className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Submit a Resource
+            {t('about.submit_resource')}
           </Link>
           <Link
             href="/login"
             className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
-            Become a Contributor
+            {t('about.become_contributor')}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Link>
         </div>
@@ -215,15 +213,15 @@ export default function AboutPage() {
 
       {/* Contact Section */}
       <div className="mt-16 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Get in Touch</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('about.contact_title')}</h2>
         <p className="text-gray-600 mb-4">
-          Have questions or suggestions? We&apos;d love to hear from you.
+          {t('about.contact_text')}
         </p>
         <a
-          href="mailto:contact@edushare.lk"
+          href={`mailto:${t('about.contact_email')}`}
           className="text-blue-600 hover:text-blue-700 font-medium"
         >
-          contact@edushare.lk
+          {t('about.contact_email')}
         </a>
       </div>
     </div>
