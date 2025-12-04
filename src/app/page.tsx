@@ -193,32 +193,32 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gray-900 text-white">
+      <section className="py-16 bg-gray-900 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-6">
-            <Users className="w-12 h-12 text-blue-400" />
+        <Users className="w-12 h-12 text-blue-400" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('about.contributors_title')}
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        {t('about.contributors_title')}
           </h2>
           <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-            {t('about.contributors_text')}
+        {t('about.contributors_text')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/submit"
-              className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              {t('about.submit_resource')}
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              {t('about.become_contributor')}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
+        <Link
+          href="/submit"
+          className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          {t('about.submit_resource')}
+        </Link>
+        <Link
+          href="/login"
+          className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        >
+          {t('about.become_contributor')}
+          <ArrowRight className="w-5 h-5 ml-2" />
+        </Link>
           </div>
         </div>
       </section>

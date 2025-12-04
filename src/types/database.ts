@@ -198,8 +198,9 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'dashboard.manage_desc': 'Edit or delete your resources',
     
     // About page
-    'about.title': 'Our Mission: Education Never Fails',
-    'about.subtitle': 'When students lose their books, devices, and safe places to learn, we believe humanity steps forward. Teachers, volunteers, and caring individuals uniting to restore access to knowledge.',
+    'about.title': 'Education Never Fails',
+    'about.vission_title': 'Our Vission.',
+    'about.vission_text': 'When students lose their books, devices, and safe places to learn, we believe humanity steps forward. Teachers, volunteers, and caring individuals uniting to restore access to knowledge.',
     'about.mission_title': 'Our Mission',
     'about.mission_text': 'We ensure that education never becomes a casualty of disaster. This platform was created to unite teachers, volunteers, donors, and caring individuals who are ready to lift others through knowledge. Every shared note, every recorded lesson, and every act of kindness becomes a bridge for a student trying to continue their learning journey.',
     'about.values_title': 'Our Community',
@@ -338,7 +339,8 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     
     // About page
     'about.title': 'උගතමනා ශිල්පයමයි මතු රැකෙනා',
-    'about.subtitle': 'සිසුන් ඔවුන්ගේ පොත්, උපකරණ සහ ඉගෙනුම් ස්ථාන අහිමි වූ විට, අපි දැනටත් පුරවා ගිණුම් ගැතිවමින්. ගුරුවරුන්, ස්වේච්ඡා සේවකයින් සහ සැවෙසින් පුද්ගලයින් දැනුම මගින් එක් වෙමින්.',
+    'about.vission_title': 'අපගේ දැක්ම',
+    'about.vission_text': 'සිසුන් ඔවුන්ගේ පොත්, උපකරණ සහ ඉගෙනුම් ස්ථාන අහිමි වූ විට, අපි දැනටත් පුරවා ගිණුම් ගැතිවමින්. ගුරුවරුන්, ස්වේච්ඡා සේවකයින් සහ සැවෙසින් පුද්ගලයින් දැනුම මගින් එක් වෙමින්.',
     'about.mission_title': 'අපගේ මෙහෙවර',
     'about.mission_text': 'ශික්ෂණ කිසිවිටත් විපතින් සේවක නොවිය පුරවා ගිණුම්. මෙම ගුණ ගුරුවරුන්, ස්වේච්ඡා සේවකයින්, දූතයින් සහ දැනුම බෙදා ගිණුම් සිටින සැවෙසින් පුද්ගලයින් එක්තු කිරීම සඳහා. බෙදා ගන්නා සටහන් සිට, සජීවී පන්තිය සිට, ඉතිරි ඉගෙනුම් ගිණුම් සිට - සිසුවක් ඔවුන්ගේ ඉගෙනුම් සැතපුරුවිතුව ගිණුම් දිගටම කරන පරිදි.',
     'about.values_title': 'අපගේ වටිනාකම්',
@@ -476,8 +478,9 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'dashboard.manage_desc': 'உங்கள் வளங்களைத் திருத்தவும் அல்லது நீக்கவும்',
     
     // About page
-    'about.title': 'எங்கள் பணி: கல்வி நிறுத்தப்படுவதில்லை',
-    'about.subtitle': 'மாணவர்கள் தங்களின் புத்தகங்கள், சாதனங்கள் மற்றும் கற்றல் இடத்தை இழக்கும்போது, நாம் நம்புவோம் மனிதுறவு முன்வருகிறது. ஆசிரியர்கள், தன்னார்வலர்கள் மற்றும் நாம் கரிசனை கொண்ட நபர்கள் அறிவை மீட்டெடுக்க ஒன்றுபட்டுள்ளோம்.',
+    'about.title': 'கல்வி நிறுத்தப்படுவதில்லை',
+    'about.vission_title': 'எங்கள் பார்வை',
+    'about.vission_text': 'மாணவர்கள் தங்களின் புத்தகங்கள், சாதனங்கள் மற்றும் கற்றல் இடத்தை இழக்கும்போது, நாம் நம்புவோம் மனிதுறவு முன்வருகிறது. ஆசிரியர்கள், தன்னார்வலர்கள் மற்றும் நாம் கரிசனை கொண்ட நபர்கள் அறிவை மீட்டெடுக்க ஒன்றுபட்டுள்ளோம்.',
     'about.mission_title': 'எங்கள் பணி',
     'about.mission_text': 'கல்வி பேரிடர்ப் பலியாக வேண்டாம் என்று உறுதிசெய்கிறோம். ஆசிரியர்கள், தன்னார்வலர்கள், கொடையாளர்கள் மற்றும் அறிவின் மூலம் மற்றவர்களைத் தூக்க தயாராக இருக்கும் கரிசனை நபர்களை ஒன்றுபடுத்த இந்த தளம் உருவாக்கப்பட்டது. பகிரப்பட்ட ஒவ்வொரு குறிப்பு, ஒவ்வொரு பதிவுசெய்யப்பட்ட பாடமும், ஒவ்வொரு கருணையும் அவர்களின் கற்றல் பயணத்தைத் தொடர்ந்து கொள்ள முயற்சிக்கும் மாணவனுக்கு ஒரு பாலமாக மாறுகிறது.',
     'about.values_title': 'எங்கள் சமூகம்',
