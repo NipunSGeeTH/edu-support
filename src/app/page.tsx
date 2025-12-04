@@ -55,8 +55,8 @@ export default function Home() {
       <section className="bg-gradient-to-r from-green-500 to-emerald-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center py-2 md:py-4">
-            <p className="text-white font-bold text-center">
-              Learn today, Lead tomorrow. Education changes everything
+            <p className="text-white font-bold text-sm text-center">
+              {t('home.banner')}
             </p>
           </div>
         </div>
@@ -70,11 +70,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Quick Access
+              {t('home.quick_access')}
             </h2>
-            <p className="text-lg text-gray-600">
-              Choose your path to start learning
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -93,7 +90,7 @@ export default function Home() {
                 {t('materials.title')}
               </h3>
               <p className="text-gray-600">
-                Past papers, notes, and textbooks for all subjects
+                {t('home.materials_desc')}
               </p>
             </Link>
 
@@ -112,7 +109,7 @@ export default function Home() {
                 {t('sessions.title')}
               </h3>
               <p className="text-gray-600">
-                Live classes and recorded video lessons
+                {t('home.sessions_desc')}
               </p>
             </Link>
 
@@ -131,7 +128,7 @@ export default function Home() {
                 {t('nav.submit')}
               </h3>
               <p className="text-gray-600">
-                Share your educational resources with the community
+                {t('home.submit_desc')}
               </p>
             </Link>
           </div>
@@ -143,10 +140,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Educational Support
+              {t('home.educational_support')}
             </h2>
             <p className="text-lg text-gray-600">
-              Give or receive educational help - books, clothes, stationery, and more
+              {t('home.educational_support_desc')}
             </p>
           </div>
 
@@ -163,10 +160,10 @@ export default function Home() {
                 <ArrowRight className="w-6 h-6 text-orange-500 group-hover:translate-x-2 transition-transform" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Request Help
+                {t('home.request_help')}
               </h3>
               <p className="text-gray-600">
-                Need educational supplies? Submit a request and let donors help you
+                {t('home.request_help_desc')}
               </p>
             </Link>
 
@@ -182,10 +179,10 @@ export default function Home() {
                 <ArrowRight className="w-6 h-6 text-red-500 group-hover:translate-x-2 transition-transform" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Donate to Help
+                {t('home.donate_help')}
               </h3>
               <p className="text-gray-600">
-                View requests from students and help them with educational supplies
+                {t('home.donate_help_desc')}
               </p>
             </Link>
           </div>

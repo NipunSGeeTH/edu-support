@@ -4,7 +4,7 @@ import { BookOpen, Github, Mail } from 'lucide-react';
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
@@ -15,8 +15,7 @@ export default function Footer() {
               <span className="font-bold text-xl text-white">EduSupport</span>
             </div>
             <p className="text-gray-400 max-w-md">
-              A free educational resource sharing platform for Sri Lankan students.
-              Access past papers, notes, textbooks, and learning sessions.
+             Born from the impact of disaster, this free platform helps Sri Lankan students regain access to learning. Find past papers, notes, textbooks and sessions - Bringing education back to those who lost it.
             </p>
           </div>
 
@@ -76,8 +75,8 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} EduSupport. All rights reserved.</p>
-          <p className="mt-1">Made with ❤️ for Sri Lankan students</p>
+          <p className='text-xs'>© {new Date().getFullYear()} EduSupport. All rights reserved.</p>
+          <p className="mt-1">Rebuilding Futures Through Knowledge</p>
         </div>
       </div>
     </footer>

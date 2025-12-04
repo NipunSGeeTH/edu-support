@@ -173,6 +173,8 @@ export default function MaterialsPage() {
             />
           </div>
           <button
+            type="button"
+            aria-label={t('filter.title')}
             onClick={() => setShowMobileFilters(true)}
             className="lg:hidden px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
           >
