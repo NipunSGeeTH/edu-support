@@ -50,6 +50,9 @@ export default function AddResourcePage() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
+  // Anonymous submission
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
   const availableStreams = STREAMS[level];
   const availableSubjects = SUBJECTS[stream];
 
@@ -107,13 +110,9 @@ export default function AddResourcePage() {
         stream,
         subject,
         language,
-        contributor_id: user.id,
-        contributor_name: user.user_metadata?.full_name || user.email,
-        is_anonymous: false,
-        // Auto-approve for authenticated users
-        status: 'approved' as const,
-        approved_at: new Date().toISOString(),
-        approved_by: user.id,
+        contributor_id: (!isAnonymous && user) ? user.id : null,
+        contributor_name: (!isAnonymous && user) ? (user.user_metadata?.full_name || user.email) : null,
+        is_anonymous: isAnonymous || !user,
       };
 
       let insertError;
@@ -138,7 +137,13 @@ export default function AddResourcePage() {
       if (insertError) {
         setError(insertError.message);
       } else {
-        setSuccess('approved');
+        // Set success state based on whether it will be auto-approved
+        if (user && !isAnonymous) {
+          setSuccess('approved');
+        } else {
+          setSuccess('pending');
+        }
+        
         // Reset form
         setTitle('');
         setDescription('');
@@ -146,6 +151,7 @@ export default function AddResourcePage() {
         setSessionDate('');
         setStartTime('');
         setEndTime('');
+        setIsAnonymous(false);
         
         // Redirect after short delay
         setTimeout(() => {
@@ -184,11 +190,23 @@ export default function AddResourcePage() {
 
       {/* Success Message */}
       {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+        <div className={`mb-6 p-4 rounded-lg flex items-start space-x-3 ${
+          success === 'approved' 
+            ? 'bg-green-50 border border-green-200' 
+            : 'bg-yellow-50 border border-yellow-200'
+        }`}>
+          {success === 'approved' ? (
+            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+          ) : (
+            <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
+          )}
           <div>
-            <p className="font-medium text-green-800">{t('submit.success')}</p>
-            <p className="text-sm text-green-700">{t('submit.success_approved')}</p>
+            <p className={`font-medium ${success === 'approved' ? 'text-green-800' : 'text-yellow-800'}`}>
+              {t('submit.success')}
+            </p>
+            <p className={`text-sm ${success === 'approved' ? 'text-green-700' : 'text-yellow-700'}`}>
+              {success === 'approved' ? t('submit.success_approved') : t('submit.success_pending')}
+            </p>
           </div>
         </div>
       )}
@@ -285,6 +303,7 @@ export default function AddResourcePage() {
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value as Level)}
+              title={t('filter.level')}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {LEVELS.map((l) => (
@@ -302,6 +321,7 @@ export default function AddResourcePage() {
             <select
               value={stream}
               onChange={(e) => handleStreamChange(e.target.value as Stream)}
+              title={t('filter.stream')}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {availableStreams.map((s) => (
@@ -322,6 +342,7 @@ export default function AddResourcePage() {
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              title={t('filter.subject')}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {availableSubjects.map((s) => (
@@ -339,6 +360,7 @@ export default function AddResourcePage() {
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as Language)}
+              title={t('filter.medium')}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {LANGUAGES.map((l) => (
@@ -363,6 +385,7 @@ export default function AddResourcePage() {
                   type="date"
                   value={sessionDate}
                   onChange={(e) => setSessionDate(e.target.value)}
+                  placeholder={t('submit.date')}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
                 />
@@ -375,6 +398,7 @@ export default function AddResourcePage() {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  placeholder={t('submit.start_time')}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
                 />
@@ -387,6 +411,7 @@ export default function AddResourcePage() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  placeholder={t('submit.end_time')}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
                 />
@@ -394,6 +419,8 @@ export default function AddResourcePage() {
             </div>
           </div>
         )}
+
+
 
         {/* Title */}
         <div className="mb-6">
@@ -442,6 +469,27 @@ export default function AddResourcePage() {
             {resourceType === 'material' ? t('submit.url_hint_material') : t('submit.url_hint_session')}
           </p>
         </div>
+        {/* Anonymous Checkbox - Only if logged in */}
+        {user && (
+          <div className="mb-6">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">
+                  {t('submit.anonymous')}
+                </span>
+                <p className="text-xs text-gray-500">
+                  {t('submit.anonymous_hint')}
+                </p>
+              </div>
+            </label>
+          </div>
+        )}
 
         {/* Submit Button */}
         <button

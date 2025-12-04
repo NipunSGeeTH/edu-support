@@ -172,40 +172,6 @@ export default function DashboardPage() {
           <h3 className="font-medium text-gray-700">{t('dashboard.sessions_count')}</h3>
           <p className="text-sm text-gray-500">Live & recorded classes</p>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-yellow-600" />
-            </div>
-            <span className="text-3xl font-bold text-gray-900">
-              {totalPending}
-            </span>
-          </div>
-          <h3 className="font-medium text-gray-700">{t('dashboard.pending')}</h3>
-          <p className="text-sm text-gray-500">Awaiting approval</p>
-        </div>
-      </div>
-
-      {/* Status Summary */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <div>
-              <p className="font-medium text-green-800">{totalApproved} Approved</p>
-              <p className="text-sm text-green-600">{stats.approvedMaterials} materials, {stats.approvedSessions} sessions</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-            <Clock className="w-5 h-5 text-yellow-600" />
-            <div>
-              <p className="font-medium text-yellow-800">{totalPending} Pending</p>
-              <p className="text-sm text-yellow-600">{stats.pendingMaterials} materials, {stats.pendingSessions} sessions</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Quick Actions */}
@@ -236,21 +202,6 @@ export default function DashboardPage() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.manage')}</h3>
               <p className="text-gray-600">{t('dashboard.manage_desc')}</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/dashboard/admin"
-          className="bg-white rounded-xl p-6 border border-yellow-200 hover:border-yellow-300 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Review Submissions</h3>
-              <p className="text-gray-600">Approve pending resources</p>
             </div>
           </div>
         </Link>
