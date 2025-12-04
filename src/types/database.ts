@@ -101,7 +101,7 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     
     // Home page
     'home.title': 'Rebuilding Futures Through Knowledge',
-    'home.subtitle': 'Keeping education alive in disaster by uniting caring people to share knowledge, resources and hope — helping every affected student rise again with strength and dignity.',
+    'home.subtitle': 'Keeping education alive in disaster by uniting caring people to share knowledge, resources and hope - helping every affected student rise again with strength and dignity.',
     'home.browse_materials': 'Browse Materials',
     'home.view_sessions': 'View Sessions',
     'home.features_title': 'Uniting Humanity Through Knowledge',
