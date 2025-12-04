@@ -9,7 +9,9 @@ A free educational resource sharing platform for Sri Lankan students built with 
 - 🔍 **Smart Filtering**: Filter by Level (AL/OL), Stream, Subject, and Language
 - 🌐 **Multi-language Support**: Resources in Sinhala, Tamil, and English
 - 👥 **Contributor Portal**: Teachers can login and share resources
+- ✏️ **Edit Resources**: Contributors can edit and update their shared resources
 - 🔐 **Google Authentication**: Secure login with Google via Supabase Auth
+- ⚠️ **Error Handling**: Custom 404 and error pages for better user experience
 
 ## Tech Stack
 
@@ -86,13 +88,15 @@ src/
 │   ├── login/           # Login page
 │   ├── materials/       # Browse materials
 │   ├── sessions/        # Browse sessions
+│   ├── error.tsx        # Global error page handler
+│   ├── not-found.tsx    # 404 not found page
 │   ├── layout.tsx       # Root layout
 │   └── page.tsx         # Homepage
 ├── components/
 │   ├── FilterSidebar.tsx
 │   ├── Footer.tsx
 │   ├── Navbar.tsx
-│   └── ResourceCard.tsx
+│   └── ResourceCard.tsx # Includes edit modal
 ├── lib/
 │   └── supabase/
 │       ├── client.ts    # Browser client
@@ -109,12 +113,14 @@ src/
 1. Browse materials or sessions from homepage
 2. Filter by Level → Stream → Subject → Language
 3. View and access resources without logging in
+4. See custom 404 page if accessing non-existent routes
 
 ### Contributors (Authenticated)
 1. Login with Google
 2. Access dashboard to view stats
 3. Add new resources (materials or sessions)
 4. Manage (edit/delete) existing resources
+5. Edit resource details via inline modal on resource cards
 
 ## Database Schema
 

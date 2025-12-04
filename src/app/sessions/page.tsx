@@ -194,8 +194,10 @@ export default function SessionsPage() {
             />
           </div>
           <button
+            type="button"
             onClick={() => setShowMobileFilters(true)}
             className="lg:hidden px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
+            aria-label={t('filter.title')}
           >
             <Filter className="w-5 h-5" />
           </button>
@@ -227,7 +229,11 @@ export default function SessionsPage() {
             <div className="fixed right-0 top-0 bottom-0 w-80 bg-white p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold">{t('filter.title')}</h2>
-                <button onClick={() => setShowMobileFilters(false)}>
+                <button 
+                  type="button"
+                  onClick={() => setShowMobileFilters(false)}
+                  aria-label="Close filters"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
