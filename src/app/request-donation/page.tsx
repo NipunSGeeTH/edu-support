@@ -349,12 +349,12 @@ export default function RequestDonationPage() {
               )}
             </button>
 
-            {/* Security Notice */}
-            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-              <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            {/* Public Data Notice */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-gray-700">Your information is protected</p>
-                <p>This form is protected by rate limiting to prevent spam. We only share your contact details with verified donors.</p>
+                <p className="font-medium text-amber-900">Your information will be public</p>
+                <p>All information you provide (name, phone number, address, school, etc.) will be publicly visible on the Donate page so donors can contact you directly.</p>
               </div>
             </div>
           </form>

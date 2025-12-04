@@ -52,11 +52,11 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="mailto:contact@EduSupport.lk"
+                  href="mailto:edusupport@kuppihub.org"
                   className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>contact@EduSupport.lk</span>
+                  <span>edusupport@kuppihub.org</span>
                 </a>
               </li>
               <li>
