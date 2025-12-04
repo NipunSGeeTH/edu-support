@@ -67,6 +67,10 @@ export interface Subject {
 }
 
 // Constants for filter options
+// NOTE: These are fallback values. The app fetches live data from the database.
+// To add/modify levels, streams, subjects, etc., update the database tables.
+// See: supabase/migrations/003_lookup_tables.sql
+
 export const LEVELS: Level[] = ['AL', 'OL'];
 
 export const STREAMS: Record<Level, Stream[]> = {
@@ -83,7 +87,7 @@ export const SUBJECTS: Record<Stream, string[]> = {
 
 export const LANGUAGES: Language[] = ['Sinhala', 'Tamil', 'English'];
 
-export const MATERIAL_CATEGORIES: MaterialCategory[] = ['Past Paper', 'Note', 'Textbook','Model Paper'];
+export const MATERIAL_CATEGORIES: MaterialCategory[] = ['Past Paper', 'Note', 'Textbook', 'Model Paper'];
 export const SESSION_TYPES: SessionType[] = ['Live', 'Recording'];
 
 // UI Translations

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { User } from '@supabase/supabase-js';
 import {
   MaterialCategory,
@@ -11,12 +12,6 @@ import {
   Level,
   Stream,
   Language,
-  LEVELS,
-  STREAMS,
-  SUBJECTS,
-  LANGUAGES,
-  MATERIAL_CATEGORIES,
-  SESSION_TYPES,
 } from '@/types/database';
 import { ArrowLeft, Plus, Loader2, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -26,11 +21,18 @@ type ResourceType = 'material' | 'session';
 export default function SubmitPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { config } = useConfig();
 
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<'approved' | 'pending' | null>(null);
+
+  // Get config values
+  const levels = config?.levels || ['AL', 'OL'];
+  const languages = config?.languages || ['Sinhala', 'Tamil', 'English'];
+  const materialCategories = config?.materialCategories || ['Past Paper', 'Note', 'Textbook', 'Model Paper'];
+  const sessionTypes = config?.sessionTypes || ['Live', 'Recording'];
 
   // Form state
   const [resourceType, setResourceType] = useState<ResourceType>('material');
@@ -38,7 +40,7 @@ export default function SubmitPage() {
   const [sessionType, setSessionType] = useState<SessionType>('Recording');
   const [level, setLevel] = useState<Level>('AL');
   const [stream, setStream] = useState<Stream>('Science');
-  const [subject, setSubject] = useState<string>(SUBJECTS['Science'][0]);
+  const [subject, setSubject] = useState<string>('');
   const [language, setLanguage] = useState<Language>('English');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -50,8 +52,15 @@ export default function SubmitPage() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
-  const availableStreams = STREAMS[level];
-  const availableSubjects = SUBJECTS[stream];
+  const availableStreams = config?.streams[level] || [];
+  const availableSubjects = config?.subjects[stream] || [];
+
+  // Initialize subject when config loads or stream changes
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
+      setSubject(availableSubjects[0]);
+    }
+  }, [availableSubjects, subject]);
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -77,7 +86,8 @@ export default function SubmitPage() {
   // Reset subject when stream changes
   const handleStreamChange = (newStream: Stream) => {
     setStream(newStream);
-    setSubject(SUBJECTS[newStream][0]);
+    const newSubjects = config?.subjects[newStream] || [];
+    setSubject(newSubjects[0] || '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -246,11 +256,11 @@ export default function SubmitPage() {
           </label>
           <div className="flex flex-wrap gap-2">
             {resourceType === 'material' ? (
-              MATERIAL_CATEGORIES.map((cat) => (
+              materialCategories.map((cat) => (
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setCategory(cat)}
+                  onClick={() => setCategory(cat as MaterialCategory)}
                   className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                     category === cat
                       ? 'bg-blue-600 text-white'
@@ -261,11 +271,11 @@ export default function SubmitPage() {
                 </button>
               ))
             ) : (
-              SESSION_TYPES.map((type) => (
+              sessionTypes.map((type) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setSessionType(type)}
+                  onClick={() => setSessionType(type as SessionType)}
                   className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                     sessionType === type
                       ? 'bg-purple-600 text-white'
@@ -333,7 +343,7 @@ export default function SubmitPage() {
               onChange={(e) => setLevel(e.target.value as Level)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {LEVELS.map((l) => (
+              {levels.map((l) => (
                 <option key={l} value={l}>
                   {l === 'AL' ? 'Advanced Level (A/L)' : 'Ordinary Level (O/L)'}
                 </option>
@@ -387,7 +397,7 @@ export default function SubmitPage() {
               onChange={(e) => setLanguage(e.target.value as Language)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {LANGUAGES.map((l) => (
+              {languages.map((l) => (
                 <option key={l} value={l}>
                   {l}
                 </option>

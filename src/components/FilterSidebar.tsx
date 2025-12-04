@@ -1,6 +1,7 @@
 'use client';
 
-import { Level, Stream, Language, LEVELS, STREAMS, SUBJECTS, LANGUAGES } from '@/types/database';
+import { useConfig } from '@/contexts/ConfigContext';
+import { Level, Stream, Language } from '@/types/database';
 
 interface FilterSidebarProps<T extends string> {
   selectedLevel: Level | null;
@@ -29,8 +30,16 @@ export default function FilterSidebar<T extends string>({
   onLanguageChange,
   onCategoryChange,
 }: FilterSidebarProps<T>) {
-  const availableStreams = selectedLevel ? STREAMS[selectedLevel] : [];
-  const availableSubjects = selectedStream ? SUBJECTS[selectedStream] : [];
+  const { config } = useConfig();
+  
+  const levels = config?.levels || [];
+  const availableStreams = selectedLevel && config?.streams[selectedLevel] 
+    ? config.streams[selectedLevel] 
+    : [];
+  const availableSubjects = selectedStream && config?.subjects[selectedStream]
+    ? config.subjects[selectedStream]
+    : [];
+  const languages = config?.languages || [];
 
   const handleLevelChange = (level: Level | null) => {
     onLevelChange(level);
@@ -53,10 +62,10 @@ export default function FilterSidebar<T extends string>({
           Level
         </label>
         <div className="flex gap-2">
-          {LEVELS.map((level) => (
+          {levels.map((level) => (
             <button
               key={level}
-              onClick={() => handleLevelChange(selectedLevel === level ? null : level)}
+              onClick={() => handleLevelChange(selectedLevel === level ? null : level as Level)}
               className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                 selectedLevel === level
                   ? 'bg-blue-600 text-white'
@@ -120,7 +129,7 @@ export default function FilterSidebar<T extends string>({
           className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">All Languages</option>
-          {LANGUAGES.map((lang) => (
+          {languages.map((lang) => (
             <option key={lang} value={lang}>
               {lang}
             </option>
