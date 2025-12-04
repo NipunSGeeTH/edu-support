@@ -194,10 +194,10 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'dashboard.manage_desc': 'Edit or delete your resources',
     
     // About page
-    'about.title': 'About EduShare',
+    'about.title': 'About EduSupport',
     'about.subtitle': 'Empowering Sri Lankan students with free, accessible educational resources',
     'about.mission_title': 'Our Mission',
-    'about.mission_text': 'EduShare was created with a simple mission: to make quality educational resources accessible to every student in Sri Lanka, regardless of their location or economic background.',
+    'about.mission_text': 'EduSupport was created with a simple mission: to make quality educational resources accessible to every student in Sri Lanka, regardless of their location or economic background.',
     'about.values_title': 'Our Values',
     
     // Common
@@ -317,10 +317,10 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'dashboard.manage_desc': 'ඔබේ සම්පත් සංස්කරණය හෝ මකන්න',
     
     // About page
-    'about.title': 'EduShare ගැන',
+    'about.title': 'EduSupport ගැන',
     'about.subtitle': 'නොමිලේ, ප්‍රවේශ විය හැකි අධ්‍යාපනික සම්පත් සමඟ ශ්‍රී ලාංකික සිසුන් බලගන්වමින්',
     'about.mission_title': 'අපගේ මෙහෙවර',
-    'about.mission_text': 'EduShare නිර්මාණය කරන ලද්දේ සරල මෙහෙවරක් සමඟයි: ශ්‍රී ලංකාවේ සෑම සිසුවෙකුටම ගුණාත්මක අධ්‍යාපනික සම්පත් ලබා ගත හැකි කිරීම.',
+    'about.mission_text': 'EduSupport නිර්මාණය කරන ලද්දේ සරල මෙහෙවරක් සමඟයි: ශ්‍රී ලංකාවේ සෑම සිසුවෙකුටම ගුණාත්මක අධ්‍යාපනික සම්පත් ලබා ගත හැකි කිරීම.',
     'about.values_title': 'අපගේ වටිනාකම්',
     
     // Common
@@ -440,10 +440,10 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'dashboard.manage_desc': 'உங்கள் வளங்களைத் திருத்தவும் அல்லது நீக்கவும்',
     
     // About page
-    'about.title': 'EduShare பற்றி',
+    'about.title': 'EduSupport பற்றி',
     'about.subtitle': 'இலவச, அணுகக்கூடிய கல்வி வளங்களுடன் இலங்கை மாணவர்களை அதிகாரப்படுத்துதல்',
     'about.mission_title': 'எங்கள் நோக்கம்',
-    'about.mission_text': 'EduShare ஒரு எளிய நோக்கத்துடன் உருவாக்கப்பட்டது: இலங்கையில் உள்ள ஒவ்வொரு மாணவருக்கும் தரமான கல்வி வளங்களை அணுகக்கூடியதாக மாற்றுவது.',
+    'about.mission_text': 'EduSupport ஒரு எளிய நோக்கத்துடன் உருவாக்கப்பட்டது: இலங்கையில் உள்ள ஒவ்வொரு மாணவருக்கும் தரமான கல்வி வளங்களை அணுகக்கூடியதாக மாற்றுவது.',
     'about.values_title': 'எங்கள் மதிப்புகள்',
     
     // Common

@@ -1,4 +1,4 @@
--- Supabase Database Schema for EduShare (Normalized)
+-- Supabase Database Schema for EduSupport (Normalized)
 -- Run this SQL in your Supabase SQL Editor
 
 -- Enable UUID extension if not already enabled

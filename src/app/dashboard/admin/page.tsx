@@ -33,7 +33,7 @@ export default function AdminApprovalPage() {
 
   // Admin emails - in production, this would be stored in database
   const ADMIN_EMAILS = [
-    'admin@edushare.lk',
+    'admin@EduSupport.lk',
     // Add admin emails here
   ];
 

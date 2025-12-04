@@ -12,7 +12,7 @@ export default function Footer() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-white">EduShare</span>
+              <span className="font-bold text-xl text-white">EduSupport</span>
             </div>
             <p className="text-gray-400 max-w-md">
               A free educational resource sharing platform for Sri Lankan students.
@@ -53,11 +53,11 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="mailto:contact@edushare.lk"
+                  href="mailto:contact@EduSupport.lk"
                   className="flex items-center space-x-2 hover:text-white transition-colors"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>contact@edushare.lk</span>
+                  <span>contact@EduSupport.lk</span>
                 </a>
               </li>
               <li>
@@ -76,7 +76,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} EduShare. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EduSupport. All rights reserved.</p>
           <p className="mt-1">Made with ❤️ for Sri Lankan students</p>
         </div>
       </div>

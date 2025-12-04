@@ -1,4 +1,4 @@
-# EduShare - Educational Resource Sharing Platform
+# EduSupport - Educational Resource Sharing Platform
 
 A free educational resource sharing platform for Sri Lankan students built with Next.js, TypeScript, Tailwind CSS, and Supabase.
 

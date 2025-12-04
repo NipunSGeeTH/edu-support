@@ -1,6 +1,6 @@
 <!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
 
-# EduShare - Educational Resource Sharing Platform
+# EduSupport - Educational Resource Sharing Platform
 
 This is a Next.js 14+ project with TypeScript and Tailwind CSS, using Supabase for authentication and database.
 

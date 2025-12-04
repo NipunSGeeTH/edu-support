@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduShare - Educational Resource Sharing Platform",
+  title: "EduSupport - Educational Resource Sharing Platform",
   description:
     "A free educational resource sharing platform for Sri Lankan students. Access past papers, notes, textbooks, and learning sessions.",
 };

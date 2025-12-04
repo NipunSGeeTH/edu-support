@@ -16,7 +16,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Load language from localStorage
-    const saved = localStorage.getItem('edushare-language') as UILanguage;
+    const saved = localStorage.getItem('EduSupport-language') as UILanguage;
     if (saved && ['en', 'si', 'ta'].includes(saved)) {
       setLanguageState(saved);
     }
@@ -24,7 +24,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = (lang: UILanguage) => {
     setLanguageState(lang);
-    localStorage.setItem('edushare-language', lang);
+    localStorage.setItem('EduSupport-language', lang);
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {

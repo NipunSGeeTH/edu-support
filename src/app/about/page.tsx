@@ -1,8 +1,8 @@
 import { BookOpen, Users, Target, Heart } from 'lucide-react';
 
 export const metadata = {
-  title: 'About - EduShare',
-  description: 'Learn about EduShare, a free educational resource sharing platform for Sri Lankan students.',
+  title: 'About - EduSupport',
+  description: 'Learn about EduSupport, a free educational resource sharing platform for Sri Lankan students.',
 };
 
 export default function AboutPage() {
@@ -14,7 +14,7 @@ export default function AboutPage() {
           <BookOpen className="w-8 h-8 text-blue-600" />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          About EduShare
+          About EduSupport
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Empowering Sri Lankan students with free, accessible educational resources
@@ -29,7 +29,7 @@ export default function AboutPage() {
             Our Mission
           </h2>
           <p className="text-gray-600 leading-relaxed">
-            EduShare was created with a simple mission: to make quality educational
+            EduSupport was created with a simple mission: to make quality educational
             resources accessible to every student in Sri Lanka, regardless of their
             location or economic background. We believe that education should be free
             and available to all.
@@ -117,10 +117,10 @@ export default function AboutPage() {
           Have questions or suggestions? We&apos;d love to hear from you.
         </p>
         <a
-          href="mailto:contact@edushare.lk"
+          href="mailto:contact@EduSupport.lk"
           className="text-blue-600 hover:text-blue-700 font-medium"
         >
-          contact@edushare.lk
+          contact@EduSupport.lk
         </a>
       </div>
     </div>
