@@ -84,7 +84,8 @@ export default function SessionsPage() {
     }
 
     if (selectedStream) {
-      filtered = filtered.filter((s) => s.stream === selectedStream);
+      // Stream is now an array - check if the selected stream is in the array
+      filtered = filtered.filter((s) => s.stream?.includes(selectedStream));
     }
 
     if (selectedSubject) {

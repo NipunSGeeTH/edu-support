@@ -46,24 +46,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch configuration' }, { status: 500 });
     }
 
-    // Transform data into the format expected by the frontend
+    // Transform data
     const levels = levelsResult.data?.map(l => l.code) || [];
     
-    // Group streams by level
+    // Group streams by level (excluding 'General' for display - it's internal for O/L)
     const streams: Record<string, string[]> = {};
     levelsResult.data?.forEach(level => {
       streams[level.code] = streamsResult.data
-        ?.filter(s => s.level_code === level.code)
+        ?.filter(s => s.level_code === level.code && s.code !== 'General')
         .map(s => s.code) || [];
     });
 
     const languages = languagesResult.data?.map(l => l.code) || [];
     const materialCategories = categoriesResult.data?.map(c => c.code) || [];
 
-    // Group subjects by stream
+    // Group subjects by stream (for filtering)
     const subjects: Record<string, string[]> = {};
-    const uniqueStreams = [...new Set(streamsResult.data?.map(s => s.code) || [])];
-    uniqueStreams.forEach(streamCode => {
+    const allStreamCodes = streamsResult.data?.map(s => s.code) || [];
+    allStreamCodes.forEach(streamCode => {
       subjects[streamCode] = [...new Set(
         subjectsResult.data
           ?.filter(s => s.stream_code === streamCode)
@@ -71,13 +71,45 @@ export async function GET() {
       )];
     });
 
+    // Get unique subjects by level
+    const subjectsByLevel: Record<string, string[]> = {};
+    levelsResult.data?.forEach(level => {
+      subjectsByLevel[level.code] = [...new Set(
+        subjectsResult.data
+          ?.filter(s => s.level_code === level.code)
+          .map(s => s.code) || []
+      )];
+    });
+
+    // Create mapping: level -> subject -> streams[] (from database)
+    // This tells us which streams each subject belongs to
+    const subjectStreams: Record<string, Record<string, string[]>> = {};
+    levelsResult.data?.forEach(level => {
+      subjectStreams[level.code] = {};
+      
+      // Get all subjects for this level
+      const levelSubjects = subjectsResult.data?.filter(s => s.level_code === level.code) || [];
+      
+      // Group by subject code to find all streams for each subject
+      levelSubjects.forEach(subj => {
+        if (!subjectStreams[level.code][subj.code]) {
+          subjectStreams[level.code][subj.code] = [];
+        }
+        if (!subjectStreams[level.code][subj.code].includes(subj.stream_code)) {
+          subjectStreams[level.code][subj.code].push(subj.stream_code);
+        }
+      });
+    });
+
     return NextResponse.json({
       levels,
-      streams,
+      streams, // streams by level (for filtering, excludes 'General')
       languages,
       materialCategories,
-      subjects,
-      sessionTypes: ['Live', 'Recording'], // These are fixed enum values
+      subjects, // subjects by stream (for filtering)
+      subjectsByLevel, // unique subjects per level (for submit form)
+      subjectStreams, // subject -> streams mapping (to know which streams to store)
+      sessionTypes: ['Live', 'Recording'],
     });
   } catch (error) {
     console.error('Error in config API:', error);

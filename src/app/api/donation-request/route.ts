@@ -42,30 +42,6 @@ function recordSubmission(ip: string): void {
   submissionCache.set(ip, submissions);
 }
 
-// Verify reCAPTCHA token
-async function verifyRecaptcha(token: string): Promise<{ success: boolean; score: number }> {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  
-  if (!secretKey) {
-    console.warn('reCAPTCHA secret key not configured');
-    return { success: true, score: 1.0 }; // Skip verification if not configured
-  }
-
-  try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${secretKey}&response=${token}`,
-    });
-
-    const data = await response.json();
-    return { success: data.success, score: data.score || 0 };
-  } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
-    return { success: false, score: 0 };
-  }
-}
-
 // Validate phone number (Sri Lankan format)
 function isValidPhoneNumber(phone: string): boolean {
   // Sri Lankan phone: 07X XXX XXXX or +947X XXX XXXX
@@ -99,15 +75,6 @@ export async function POST(request: NextRequest) {
     if (body.website) {
       // Bot detected - silently reject
       return NextResponse.json({ success: true }); // Fake success to confuse bots
-    }
-
-    // Verify reCAPTCHA
-    const recaptchaResult = await verifyRecaptcha(body.recaptchaToken || '');
-    if (!recaptchaResult.success || recaptchaResult.score < 0.5) {
-      return NextResponse.json(
-        { error: 'Security verification failed. Please try again.' },
-        { status: 400 }
-      );
     }
 
     // Validate required fields
@@ -151,7 +118,6 @@ export async function POST(request: NextRequest) {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       submittedFromIp: ip, // For abuse tracking
-      recaptchaScore: recaptchaResult.score,
     };
 
     // Save to Firestore

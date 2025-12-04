@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfig } from '@/contexts/ConfigContext';
@@ -10,7 +9,6 @@ import {
   MaterialCategory,
   SessionType,
   Level,
-  Stream,
   Language,
 } from '@/types/database';
 import { ArrowLeft, Plus, Loader2, CheckCircle, Clock } from 'lucide-react';
@@ -19,29 +17,27 @@ import Link from 'next/link';
 type ResourceType = 'material' | 'session';
 
 export default function SubmitPage() {
-  const router = useRouter();
   const { t } = useLanguage();
-  const { config } = useConfig();
+  const { config, isLoading: configLoading } = useConfig();
 
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<'approved' | 'pending' | null>(null);
 
-  // Get config values
-  const levels = config?.levels || ['AL', 'OL'];
-  const languages = config?.languages || ['Sinhala', 'Tamil', 'English'];
-  const materialCategories = config?.materialCategories || ['Past Paper', 'Note', 'Textbook', 'Model Paper'];
+  // Get config values from database
+  const levels = config?.levels || [];
+  const languages = config?.languages || [];
+  const materialCategories = config?.materialCategories || [];
   const sessionTypes = config?.sessionTypes || ['Live', 'Recording'];
 
   // Form state
   const [resourceType, setResourceType] = useState<ResourceType>('material');
-  const [category, setCategory] = useState<MaterialCategory>('Past Paper');
+  const [category, setCategory] = useState<MaterialCategory | ''>('');
   const [sessionType, setSessionType] = useState<SessionType>('Recording');
-  const [level, setLevel] = useState<Level>('AL');
-  const [stream, setStream] = useState<Stream>('Science');
+  const [level, setLevel] = useState<Level | ''>('');
   const [subject, setSubject] = useState<string>('');
-  const [language, setLanguage] = useState<Language>('English');
+  const [language, setLanguage] = useState<Language | ''>('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
@@ -52,15 +48,35 @@ export default function SubmitPage() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
-  const availableStreams = config?.streams[level] || [];
-  const availableSubjects = config?.subjects[stream] || [];
+  // Get subjects for the selected level from database
+  const availableSubjects = useMemo(() => {
+    if (!config || !level) return [];
+    return config.subjectsByLevel?.[level] || [];
+  }, [config, level]);
 
-  // Initialize subject when config loads or stream changes
+  // Get streams for the selected subject from database (auto-assigned, not user selected)
+  const subjectStreams = useMemo(() => {
+    if (!config || !level || !subject) return [];
+    return config.subjectStreams?.[level]?.[subject] || [];
+  }, [config, level, subject]);
+
+  // Initialize defaults when config loads
   useEffect(() => {
-    if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
-      setSubject(availableSubjects[0]);
+    if (config && !level && config.levels.length > 0) {
+      setLevel(config.levels[0] as Level);
     }
-  }, [availableSubjects, subject]);
+    if (config && !language && config.languages.length > 0) {
+      setLanguage(config.languages[0] as Language);
+    }
+    if (config && !category && config.materialCategories.length > 0) {
+      setCategory(config.materialCategories[0] as MaterialCategory);
+    }
+  }, [config, level, language, category]);
+
+  // Reset subject when level changes
+  useEffect(() => {
+    setSubject('');
+  }, [level]);
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -83,27 +99,32 @@ export default function SubmitPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Reset subject when stream changes
-  const handleStreamChange = (newStream: Stream) => {
-    setStream(newStream);
-    const newSubjects = config?.subjects[newStream] || [];
-    setSubject(newSubjects[0] || '');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
+    // Validate
+    if (!subject || subjectStreams.length === 0) {
+      setError('Please select a valid subject');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
+      
+      // Auto-assign streams based on subject from database
+      // For O/L subjects, streams will be ['General']
+      // For A/L multi-stream subjects like ICT, streams will be ['Science', 'Commerce', 'Technology']
+      const streamsToStore = subjectStreams;
       
       const baseData = {
         title,
         description,
         url,
         level,
-        stream,
+        stream: streamsToStore, // Array of streams from database
         subject,
         language,
         contributor_id: (!isAnonymous && user) ? user.id : null,
@@ -133,7 +154,6 @@ export default function SubmitPage() {
       if (insertError) {
         setError(insertError.message);
       } else {
-        // Set success state based on whether it will be auto-approved
         if (user && !isAnonymous) {
           setSuccess('approved');
         } else {
@@ -147,6 +167,7 @@ export default function SubmitPage() {
         setSessionDate('');
         setStartTime('');
         setEndTime('');
+        setSubject('');
       }
     } catch (err) {
       setError(t('submit.error'));
@@ -154,6 +175,22 @@ export default function SubmitPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Check if form is valid
+  const isFormValid = level && subject && language && title && description && url && 
+    (resourceType === 'material' ? category : true);
+
+  // Show loading while config is loading
+  if (configLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -332,78 +369,80 @@ export default function SubmitPage() {
           </div>
         )}
 
-        {/* Level & Stream */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.level')}
-            </label>
-            <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value as Level)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {levels.map((l) => (
-                <option key={l} value={l}>
-                  {l === 'AL' ? 'Advanced Level (A/L)' : 'Ordinary Level (O/L)'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.stream')}
-            </label>
-            <select
-              value={stream}
-              onChange={(e) => handleStreamChange(e.target.value as Stream)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {availableStreams.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+        {/* Level Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.level')}
+          </label>
+          <div className="flex gap-3">
+            {levels.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLevel(l as Level)}
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                  level === l
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {l === 'AL' ? 'Advanced Level (A/L)' : l === 'OL' ? 'Ordinary Level (O/L)' : l}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Subject & Language */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.subject')}
-            </label>
-            <select
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {availableSubjects.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Subject Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.subject')}
+          </label>
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+            disabled={!level}
+          >
+            <option value="">Select a subject</option>
+            {availableSubjects.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.medium')}
-            </label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {languages.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+        {/* Show which streams this subject belongs to (info only, auto-assigned) */}
+        {subject && subjectStreams.length > 0 && level === 'AL' && (
+          <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <span className="font-medium">Available to streams:</span>{' '}
+              {subjectStreams.filter(s => s !== 'General').join(', ')}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              This resource will be visible to students from {subjectStreams.length > 1 ? 'these streams' : 'this stream'}
+            </p>
           </div>
+        )}
+
+        {/* Language Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.medium')}
+          </label>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select language</option>
+            {languages.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Title */}
@@ -481,7 +520,7 @@ export default function SubmitPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting || success !== null}
+          disabled={isSubmitting || success !== null || !isFormValid}
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             resourceType === 'material'
               ? 'bg-blue-600 text-white hover:bg-blue-700'

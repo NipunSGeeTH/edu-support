@@ -1,22 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { User } from '@supabase/supabase-js';
 import {
   MaterialCategory,
   SessionType,
   Level,
-  Stream,
   Language,
-  LEVELS,
-  STREAMS,
-  SUBJECTS,
-  LANGUAGES,
-  MATERIAL_CATEGORIES,
-  SESSION_TYPES,
 } from '@/types/database';
 import { ArrowLeft, Loader2, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +20,7 @@ type ResourceType = 'material' | 'session';
 export default function AddResourcePage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { config, isLoading: configLoading } = useConfig();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,14 +28,19 @@ export default function AddResourcePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<'approved' | 'pending' | null>(null);
 
+  // Get config values from database
+  const levels = config?.levels || [];
+  const languages = config?.languages || [];
+  const materialCategories = config?.materialCategories || [];
+  const sessionTypes = config?.sessionTypes || ['Live', 'Recording'];
+
   // Form state
   const [resourceType, setResourceType] = useState<ResourceType>('material');
-  const [category, setCategory] = useState<MaterialCategory>('Past Paper');
+  const [category, setCategory] = useState<MaterialCategory | ''>('');
   const [sessionType, setSessionType] = useState<SessionType>('Recording');
-  const [level, setLevel] = useState<Level>('AL');
-  const [stream, setStream] = useState<Stream>('Science');
-  const [subject, setSubject] = useState<string>(SUBJECTS['Science'][0]);
-  const [language, setLanguage] = useState<Language>('English');
+  const [level, setLevel] = useState<Level | ''>('');
+  const [subject, setSubject] = useState<string>('');
+  const [language, setLanguage] = useState<Language | ''>('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
@@ -53,8 +53,35 @@ export default function AddResourcePage() {
   // Anonymous submission
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const availableStreams = STREAMS[level];
-  const availableSubjects = SUBJECTS[stream];
+  // Get subjects for the selected level from database
+  const availableSubjects = useMemo(() => {
+    if (!config || !level) return [];
+    return config.subjectsByLevel?.[level] || [];
+  }, [config, level]);
+
+  // Get streams for the selected subject from database (auto-assigned)
+  const subjectStreams = useMemo(() => {
+    if (!config || !level || !subject) return [];
+    return config.subjectStreams?.[level]?.[subject] || [];
+  }, [config, level, subject]);
+
+  // Initialize defaults when config loads
+  useEffect(() => {
+    if (config && !level && config.levels.length > 0) {
+      setLevel(config.levels[0] as Level);
+    }
+    if (config && !language && config.languages.length > 0) {
+      setLanguage(config.languages[0] as Language);
+    }
+    if (config && !category && config.materialCategories.length > 0) {
+      setCategory(config.materialCategories[0] as MaterialCategory);
+    }
+  }, [config, level, language, category]);
+
+  // Reset subject when level changes
+  useEffect(() => {
+    setSubject('');
+  }, [level]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -82,12 +109,6 @@ export default function AddResourcePage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  // Reset subject when stream changes
-  const handleStreamChange = (newStream: Stream) => {
-    setStream(newStream);
-    setSubject(SUBJECTS[newStream][0]);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -99,15 +120,24 @@ export default function AddResourcePage() {
       return;
     }
 
+    if (!subject || subjectStreams.length === 0) {
+      setError('Please select a valid subject');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
+      
+      // Auto-assign streams based on subject from database
+      const streamsToStore = subjectStreams;
       
       const baseData = {
         title,
         description,
         url,
         level,
-        stream,
+        stream: streamsToStore, // Array of streams from database
         subject,
         language,
         contributor_id: (!isAnonymous && user) ? user.id : null,
@@ -137,7 +167,6 @@ export default function AddResourcePage() {
       if (insertError) {
         setError(insertError.message);
       } else {
-        // Set success state based on whether it will be auto-approved
         if (user && !isAnonymous) {
           setSuccess('approved');
         } else {
@@ -151,24 +180,23 @@ export default function AddResourcePage() {
         setSessionDate('');
         setStartTime('');
         setEndTime('');
-        setIsAnonymous(false);
-        
-        // Redirect after short delay
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        setSubject('');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError(t('submit.error'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  // Check if form is valid
+  const isFormValid = level && subject && language && title && description && url && 
+    (resourceType === 'material' ? category : true);
+
+  if (isLoading || configLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -182,10 +210,10 @@ export default function AddResourcePage() {
           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Dashboard
+          {t('common.back')}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.add_new')}</h1>
-        <p className="text-gray-600">{t('dashboard.add_new_desc')}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('submit.title')}</h1>
+        <p className="text-gray-600">{t('submit.subtitle')}</p>
       </div>
 
       {/* Success Message */}
@@ -261,11 +289,11 @@ export default function AddResourcePage() {
           </label>
           <div className="flex flex-wrap gap-2">
             {resourceType === 'material' ? (
-              MATERIAL_CATEGORIES.map((cat) => (
+              materialCategories.map((cat) => (
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setCategory(cat)}
+                  onClick={() => setCategory(cat as MaterialCategory)}
                   className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                     category === cat
                       ? 'bg-blue-600 text-white'
@@ -276,11 +304,11 @@ export default function AddResourcePage() {
                 </button>
               ))
             ) : (
-              SESSION_TYPES.map((type) => (
+              sessionTypes.map((type) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setSessionType(type)}
+                  onClick={() => setSessionType(type as SessionType)}
                   className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                     sessionType === type
                       ? 'bg-purple-600 text-white'
@@ -294,133 +322,121 @@ export default function AddResourcePage() {
           </div>
         </div>
 
-        {/* Level & Stream */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.level')}
-            </label>
-            <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value as Level)}
-              title={t('filter.level')}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {l === 'AL' ? 'Advanced Level (A/L)' : 'Ordinary Level (O/L)'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.stream')}
-            </label>
-            <select
-              value={stream}
-              onChange={(e) => handleStreamChange(e.target.value as Stream)}
-              title={t('filter.stream')}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {availableStreams.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Subject & Language */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.subject')}
-            </label>
-            <select
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              title={t('filter.subject')}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {availableSubjects.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('filter.medium')}
-            </label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              title={t('filter.medium')}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Session Timing (only for Live sessions) */}
+        {/* Session Timing - Only for Live sessions */}
         {resourceType === 'session' && sessionType === 'Live' && (
-          <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-            <h4 className="font-medium text-purple-800 mb-3">Session Schedule</h4>
+          <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
+            <h3 className="text-sm font-medium text-purple-900 mb-3">Session Schedule</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-purple-700 mb-1">
                   {t('submit.date')}
                 </label>
                 <input
                   type="date"
                   value={sessionDate}
                   onChange={(e) => setSessionDate(e.target.value)}
-                  placeholder={t('submit.date')}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-purple-700 mb-1">
                   {t('submit.start_time')}
                 </label>
                 <input
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  placeholder={t('submit.start_time')}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-purple-700 mb-1">
                   {t('submit.end_time')}
                 </label>
                 <input
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  placeholder={t('submit.end_time')}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
             </div>
           </div>
         )}
 
+        {/* Level Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.level')}
+          </label>
+          <div className="flex gap-3">
+            {levels.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLevel(l as Level)}
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                  level === l
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {l === 'AL' ? 'Advanced Level (A/L)' : l === 'OL' ? 'Ordinary Level (O/L)' : l}
+              </button>
+            ))}
+          </div>
+        </div>
 
+        {/* Subject Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.subject')}
+          </label>
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+            disabled={!level}
+          >
+            <option value="">Select a subject</option>
+            {availableSubjects.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Show which streams this subject belongs to (info only) */}
+        {subject && subjectStreams.length > 0 && level === 'AL' && (
+          <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <span className="font-medium">Available to streams:</span>{' '}
+              {subjectStreams.filter(s => s !== 'General').join(', ')}
+            </p>
+          </div>
+        )}
+
+        {/* Language Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('filter.medium')}
+          </label>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select language</option>
+            {languages.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Title */}
         <div className="mb-6">
@@ -466,40 +482,45 @@ export default function AddResourcePage() {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <p className="text-sm text-gray-500 mt-1">
-            {resourceType === 'material' ? t('submit.url_hint_material') : t('submit.url_hint_session')}
+            {resourceType === 'material'
+              ? t('submit.url_hint_material')
+              : t('submit.url_hint_session')}
           </p>
         </div>
-        {/* Anonymous Checkbox - Only if logged in */}
-        {user && (
-          <div className="mb-6">
-            <label className="flex items-start space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">
-                  {t('submit.anonymous')}
-                </span>
-                <p className="text-xs text-gray-500">
-                  {t('submit.anonymous_hint')}
-                </p>
-              </div>
-            </label>
-          </div>
-        )}
+
+        {/* Anonymous Checkbox */}
+        <div className="mb-6">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700">
+                {t('submit.anonymous')}
+              </span>
+              <p className="text-xs text-gray-500">
+                {t('submit.anonymous_hint')}
+              </p>
+            </div>
+          </label>
+        </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          disabled={isSubmitting || success !== null || !isFormValid}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            resourceType === 'material'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+          }`}
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <Loader2 className="w-5 h-5 animate-spin" />
               {t('submit.submitting')}
             </>
           ) : (

@@ -8,6 +8,8 @@ export interface ConfigData {
   languages: string[];
   materialCategories: string[];
   subjects: Record<string, string[]>;
+  subjectsByLevel: Record<string, string[]>;
+  subjectStreams: Record<string, Record<string, string[]>>; // level -> subject -> streams[]
   sessionTypes: string[];
 }
 
@@ -18,21 +20,15 @@ interface ConfigContextType {
   refetch: () => Promise<void>;
 }
 
-// Default/fallback values (used while loading or if API fails)
+// Minimal fallback values (actual data comes from database via API)
 const defaultConfig: ConfigData = {
-  levels: ['AL', 'OL'],
-  streams: {
-    AL: ['Science', 'Arts', 'Commerce', 'Technology'],
-    OL: ['Science', 'Arts', 'Commerce', 'Technology'],
-  },
-  languages: ['Sinhala', 'Tamil', 'English'],
-  materialCategories: ['Past Paper', 'Note', 'Textbook', 'Model Paper'],
-  subjects: {
-    Science: ['Physics', 'Chemistry', 'Biology', 'Combined Mathematics', 'ICT', 'Mathematics', 'Science'],
-    Arts: ['History', 'Geography', 'Political Science', 'Economics', 'Sinhala', 'Tamil', 'English Literature', 'English', 'Civic Education', 'Buddhism'],
-    Commerce: ['Accounting', 'Business Studies', 'Economics', 'ICT', 'Commerce'],
-    Technology: ['Engineering Technology', 'Bio Systems Technology', 'Science for Technology', 'ICT'],
-  },
+  levels: [],
+  streams: {},
+  languages: [],
+  materialCategories: [],
+  subjects: {},
+  subjectsByLevel: {},
+  subjectStreams: {},
   sessionTypes: ['Live', 'Recording'],
 };
 
@@ -59,7 +55,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching config:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      // Use default config as fallback
+      // Keep default empty config on error
       setConfig(defaultConfig);
     } finally {
       setIsLoading(false);
@@ -85,10 +81,10 @@ export function useConfig() {
   return context;
 }
 
-// Helper hook to get typed values
+// Helper hooks
 export function useLevels() {
   const { config } = useConfig();
-  return config?.levels || defaultConfig.levels;
+  return config?.levels || [];
 }
 
 export function useStreams(level?: string) {
@@ -96,22 +92,17 @@ export function useStreams(level?: string) {
   if (level && config?.streams[level]) {
     return config.streams[level];
   }
-  // Return all unique streams
-  const allStreams = new Set<string>();
-  Object.values(config?.streams || defaultConfig.streams).forEach(streams => {
-    streams.forEach(s => allStreams.add(s));
-  });
-  return Array.from(allStreams);
+  return [];
 }
 
 export function useLanguages() {
   const { config } = useConfig();
-  return config?.languages || defaultConfig.languages;
+  return config?.languages || [];
 }
 
 export function useMaterialCategories() {
   const { config } = useConfig();
-  return config?.materialCategories || defaultConfig.materialCategories;
+  return config?.materialCategories || [];
 }
 
 export function useSubjects(stream?: string) {
@@ -119,15 +110,35 @@ export function useSubjects(stream?: string) {
   if (stream && config?.subjects[stream]) {
     return config.subjects[stream];
   }
-  // Return all unique subjects
-  const allSubjects = new Set<string>();
-  Object.values(config?.subjects || defaultConfig.subjects).forEach(subjects => {
-    subjects.forEach(s => allSubjects.add(s));
-  });
-  return Array.from(allSubjects);
+  return [];
+}
+
+export function useSubjectsByLevel(level?: string) {
+  const { config } = useConfig();
+  if (level && config?.subjectsByLevel[level]) {
+    return config.subjectsByLevel[level];
+  }
+  return [];
+}
+
+// Get streams that a subject belongs to (for auto-tagging when submitting)
+export function useSubjectStreams(level?: string, subject?: string) {
+  const { config } = useConfig();
+  if (level && subject && config?.subjectStreams[level]?.[subject]) {
+    return config.subjectStreams[level][subject];
+  }
+  return [];
+}
+
+export function useAllSubjectStreams(level?: string) {
+  const { config } = useConfig();
+  if (level && config?.subjectStreams[level]) {
+    return config.subjectStreams[level];
+  }
+  return {};
 }
 
 export function useSessionTypes() {
   const { config } = useConfig();
-  return config?.sessionTypes || defaultConfig.sessionTypes;
+  return config?.sessionTypes || ['Live', 'Recording'];
 }

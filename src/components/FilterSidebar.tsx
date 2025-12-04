@@ -33,12 +33,34 @@ export default function FilterSidebar<T extends string>({
   const { config } = useConfig();
   
   const levels = config?.levels || [];
-  const availableStreams = selectedLevel && config?.streams[selectedLevel] 
-    ? config.streams[selectedLevel] 
+  
+  // For filtering, streams are only shown for A/L (O/L has no streams)
+  const availableStreams = selectedLevel === 'AL' && config?.streams['AL'] 
+    ? config.streams['AL']
     : [];
-  const availableSubjects = selectedStream && config?.subjects[selectedStream]
-    ? config.subjects[selectedStream]
-    : [];
+  
+  // Get available subjects based on level and optionally stream
+  const getAvailableSubjects = () => {
+    if (!config) return [];
+    
+    if (selectedLevel === 'OL') {
+      // For O/L, get all subjects (they're under 'General' stream or subjectsByLevel)
+      return config.subjects['General'] || config.subjectsByLevel?.['OL'] || [];
+    }
+    
+    if (selectedLevel === 'AL') {
+      if (selectedStream && config.subjects[selectedStream]) {
+        // Filter by specific stream
+        return config.subjects[selectedStream];
+      }
+      // If no stream selected, show all A/L subjects
+      return config.subjectsByLevel?.['AL'] || [];
+    }
+    
+    return [];
+  };
+  
+  const availableSubjects = getAvailableSubjects();
   const languages = config?.languages || [];
 
   const handleLevelChange = (level: Level | null) => {
@@ -78,25 +100,27 @@ export default function FilterSidebar<T extends string>({
         </div>
       </div>
 
-      {/* Stream Selection */}
-      <div className="mb-5">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Stream
-        </label>
-        <select
-          value={selectedStream || ''}
-          onChange={(e) => handleStreamChange(e.target.value as Stream || null)}
-          disabled={!selectedLevel}
-          className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">All Streams</option>
-          {availableStreams.map((stream) => (
-            <option key={stream} value={stream}>
-              {stream}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Stream Selection - Only show for A/L (O/L has no streams in Sri Lanka) */}
+      {selectedLevel !== 'OL' && (
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Stream
+          </label>
+          <select
+            value={selectedStream || ''}
+            onChange={(e) => handleStreamChange(e.target.value as Stream || null)}
+            disabled={!selectedLevel}
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">All Streams</option>
+            {availableStreams.map((stream) => (
+              <option key={stream} value={stream}>
+                {stream}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Subject Selection */}
       <div className="mb-5">
@@ -106,7 +130,7 @@ export default function FilterSidebar<T extends string>({
         <select
           value={selectedSubject || ''}
           onChange={(e) => onSubjectChange(e.target.value || null)}
-          disabled={!selectedStream}
+          disabled={!selectedLevel}
           className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           <option value="">All Subjects</option>

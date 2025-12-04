@@ -82,7 +82,8 @@ export default function MaterialsPage() {
     }
 
     if (selectedStream) {
-      filtered = filtered.filter((m) => m.stream === selectedStream);
+      // Stream is now an array - check if the selected stream is in the array
+      filtered = filtered.filter((m) => m.stream?.includes(selectedStream));
     }
 
     if (selectedSubject) {

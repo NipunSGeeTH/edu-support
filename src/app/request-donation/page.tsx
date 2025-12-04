@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { 
   REQUEST_CATEGORIES, 
   GRADES, 
@@ -16,12 +15,10 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Shield,
 } from 'lucide-react';
 
 export default function RequestDonationPage() {
   const { t } = useLanguage();
-  const { executeRecaptcha } = useGoogleReCaptcha();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -64,12 +61,6 @@ export default function RequestDonationPage() {
     }
 
     try {
-      // Get reCAPTCHA token
-      let recaptchaToken = '';
-      if (executeRecaptcha) {
-        recaptchaToken = await executeRecaptcha('donation_request');
-      }
-
       // Submit via API route (server-side validation)
       const response = await fetch('/api/donation-request', {
         method: 'POST',
@@ -78,7 +69,6 @@ export default function RequestDonationPage() {
         },
         body: JSON.stringify({
           ...formData,
-          recaptchaToken,
         }),
       });
 
@@ -106,7 +96,7 @@ export default function RequestDonationPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, executeRecaptcha]);
+  }, [formData]);
 
   if (submitSuccess) {
     return (
@@ -361,10 +351,10 @@ export default function RequestDonationPage() {
 
             {/* Security Notice */}
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-              <Shield className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-gray-700">Your information is protected</p>
-                <p>This form is protected by reCAPTCHA and rate limiting to prevent spam. We only share your contact details with verified donors.</p>
+                <p>This form is protected by rate limiting to prevent spam. We only share your contact details with verified donors.</p>
               </div>
             </div>
           </form>

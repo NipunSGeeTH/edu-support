@@ -1,329 +1,260 @@
--- Supabase Database Schema for EduSupport (Normalized)
--- Run this SQL in your Supabase SQL Editor
+create table public.subjects (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  code text not null,
+  name text not null,
+  stream_code text not null,
+  level_code text not null,
+  display_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint subjects_pkey primary key (id),
+  constraint subjects_code_stream_code_level_code_key unique (code, stream_code, level_code)
+) TABLESPACE pg_default;
 
--- Enable UUID extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+create index IF not exists idx_subjects_stream on public.subjects using btree (stream_code) TABLESPACE pg_default;
 
--- ============================================
--- ENUM TYPES
--- ============================================
+create index IF not exists idx_subjects_level on public.subjects using btree (level_code) TABLESPACE pg_default;
 
--- Drop existing types if they exist (for fresh install)
-DROP TYPE IF EXISTS resource_level CASCADE;
-DROP TYPE IF EXISTS resource_stream CASCADE;
-DROP TYPE IF EXISTS resource_language CASCADE;
-DROP TYPE IF EXISTS material_category CASCADE;
-DROP TYPE IF EXISTS session_type CASCADE;
-DROP TYPE IF EXISTS approval_status CASCADE;
 
-CREATE TYPE resource_level AS ENUM ('AL', 'OL');
-CREATE TYPE resource_stream AS ENUM ('Science', 'Arts', 'Commerce', 'Technology');
-CREATE TYPE resource_language AS ENUM ('Sinhala', 'Tamil', 'English');
-CREATE TYPE material_category AS ENUM ('Past Paper', 'Note', 'Textbook');
-CREATE TYPE session_type AS ENUM ('Live', 'Recording');
-CREATE TYPE approval_status AS ENUM ('pending', 'approved', 'rejected');
+create table public.streams (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  code text not null,
+  name text not null,
+  level_code text not null,
+  display_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint streams_pkey primary key (id),
+  constraint streams_code_level_code_key unique (code, level_code)
+) TABLESPACE pg_default;
 
--- ============================================
--- TABLES
--- ============================================
+create index IF not exists idx_streams_level on public.streams using btree (level_code) TABLESPACE pg_default;
 
--- Contributors table (synced with Supabase Auth)
-CREATE TABLE IF NOT EXISTS contributors (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT NOT NULL,
-    full_name TEXT,
-    avatar_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-);
 
--- Subjects lookup table
-CREATE TABLE IF NOT EXISTS subjects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT NOT NULL,
-    stream resource_stream NOT NULL,
-    level resource_level NOT NULL,
-    UNIQUE(name, stream, level)
-);
 
--- Materials table (Past Papers, Notes, Textbooks)
-CREATE TABLE IF NOT EXISTS materials (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    url TEXT NOT NULL,
-    category material_category NOT NULL,
-    level resource_level NOT NULL,
-    stream resource_stream NOT NULL,
-    subject TEXT NOT NULL,
-    language resource_language NOT NULL,
-    
-    -- Contributor info (nullable for anonymous)
-    contributor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    contributor_name TEXT,
-    is_anonymous BOOLEAN DEFAULT false,
-    
-    -- Approval status
-    status approval_status DEFAULT 'pending',
-    approved_at TIMESTAMP WITH TIME ZONE,
-    approved_by UUID REFERENCES auth.users(id),
-    
-    -- Timestamps
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-);
+create table public.sessions (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  title text not null,
+  description text not null,
+  url text not null,
+  session_type public.session_type not null,
+  level public.resource_level not null,
+  stream public.resource_stream not null,
+  subject text not null,
+  language public.resource_language not null,
+  session_date date null,
+  start_time time without time zone null,
+  end_time time without time zone null,
+  contributor_id uuid null,
+  contributor_name text null,
+  is_anonymous boolean null default false,
+  status public.approval_status null default 'pending'::approval_status,
+  approved_at timestamp with time zone null,
+  approved_by uuid null,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint sessions_pkey primary key (id),
+  constraint sessions_approved_by_fkey foreign KEY (approved_by) references auth.users (id),
+  constraint sessions_contributor_id_fkey foreign KEY (contributor_id) references auth.users (id) on delete set null
+) TABLESPACE pg_default;
 
--- Sessions table (Live classes, Recordings)
-CREATE TABLE IF NOT EXISTS sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    url TEXT NOT NULL,
-    session_type session_type NOT NULL,
-    level resource_level NOT NULL,
-    stream resource_stream NOT NULL,
-    subject TEXT NOT NULL,
-    language resource_language NOT NULL,
-    
-    -- Session timing (for Live sessions)
-    session_date DATE,
-    start_time TIME,
-    end_time TIME,
-    
-    -- Contributor info (nullable for anonymous)
-    contributor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    contributor_name TEXT,
-    is_anonymous BOOLEAN DEFAULT false,
-    
-    -- Approval status
-    status approval_status DEFAULT 'pending',
-    approved_at TIMESTAMP WITH TIME ZONE,
-    approved_by UUID REFERENCES auth.users(id),
-    
-    -- Timestamps
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-);
+create index IF not exists idx_sessions_level on public.sessions using btree (level) TABLESPACE pg_default;
 
--- ============================================
--- INDEXES
--- ============================================
+create index IF not exists idx_sessions_stream on public.sessions using btree (stream) TABLESPACE pg_default;
 
--- Materials indexes
-CREATE INDEX IF NOT EXISTS idx_materials_level ON materials(level);
-CREATE INDEX IF NOT EXISTS idx_materials_stream ON materials(stream);
-CREATE INDEX IF NOT EXISTS idx_materials_subject ON materials(subject);
-CREATE INDEX IF NOT EXISTS idx_materials_language ON materials(language);
-CREATE INDEX IF NOT EXISTS idx_materials_category ON materials(category);
-CREATE INDEX IF NOT EXISTS idx_materials_status ON materials(status);
-CREATE INDEX IF NOT EXISTS idx_materials_contributor ON materials(contributor_id);
-CREATE INDEX IF NOT EXISTS idx_materials_created_at ON materials(created_at DESC);
+create index IF not exists idx_sessions_subject on public.sessions using btree (subject) TABLESPACE pg_default;
 
--- Sessions indexes
-CREATE INDEX IF NOT EXISTS idx_sessions_level ON sessions(level);
-CREATE INDEX IF NOT EXISTS idx_sessions_stream ON sessions(stream);
-CREATE INDEX IF NOT EXISTS idx_sessions_subject ON sessions(subject);
-CREATE INDEX IF NOT EXISTS idx_sessions_language ON sessions(language);
-CREATE INDEX IF NOT EXISTS idx_sessions_type ON sessions(session_type);
-CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);
-CREATE INDEX IF NOT EXISTS idx_sessions_contributor ON sessions(contributor_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(session_date);
-CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions(created_at DESC);
+create index IF not exists idx_sessions_language on public.sessions using btree (language) TABLESPACE pg_default;
 
--- ============================================
--- ROW LEVEL SECURITY
--- ============================================
+create index IF not exists idx_sessions_type on public.sessions using btree (session_type) TABLESPACE pg_default;
 
-ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contributors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
+create index IF not exists idx_sessions_status on public.sessions using btree (status) TABLESPACE pg_default;
 
--- Materials policies
--- Anyone can view approved materials
-CREATE POLICY "Approved materials are viewable by everyone"
-ON materials FOR SELECT
-USING (status = 'approved');
+create index IF not exists idx_sessions_contributor on public.sessions using btree (contributor_id) TABLESPACE pg_default;
 
--- Contributors can view their own materials (any status)
-CREATE POLICY "Contributors can view their own materials"
-ON materials FOR SELECT
-USING (auth.uid() = contributor_id);
+create index IF not exists idx_sessions_date on public.sessions using btree (session_date) TABLESPACE pg_default;
 
--- Anyone can insert materials
-CREATE POLICY "Anyone can insert materials"
-ON materials FOR INSERT
-WITH CHECK (true);
+create index IF not exists idx_sessions_created_at on public.sessions using btree (created_at desc) TABLESPACE pg_default;
 
--- Contributors can update their own materials
-CREATE POLICY "Contributors can update their own materials"
-ON materials FOR UPDATE
-USING (auth.uid() = contributor_id);
+create trigger auto_approve_sessions BEFORE INSERT on sessions for EACH row
+execute FUNCTION auto_approve_authenticated ();
 
--- Contributors can delete their own materials
-CREATE POLICY "Contributors can delete their own materials"
-ON materials FOR DELETE
-USING (auth.uid() = contributor_id);
+create trigger update_sessions_updated_at BEFORE
+update on sessions for EACH row
+execute FUNCTION update_updated_at_column ();
 
--- Sessions policies
--- Anyone can view approved sessions (and not expired for live)
-CREATE POLICY "Approved sessions are viewable by everyone"
-ON sessions FOR SELECT
-USING (
-    status = 'approved' 
-    AND (
-        session_type = 'Recording' 
-        OR session_date IS NULL 
-        OR (session_date >= CURRENT_DATE)
-        OR (session_date = CURRENT_DATE AND end_time >= CURRENT_TIME)
+
+
+create table public.resources (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  type text not null,
+  category text not null,
+  level text not null,
+  stream text not null,
+  subject text not null,
+  language text not null,
+  url text not null,
+  description text not null,
+  title text not null,
+  contributor_id uuid not null,
+  contributor_name text null,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint resources_pkey primary key (id),
+  constraint resources_contributor_id_fkey foreign KEY (contributor_id) references auth.users (id) on delete CASCADE,
+  constraint resources_category_check check (
+    (
+      category = any (
+        array[
+          'Past Paper'::text,
+          'Note'::text,
+          'Textbook'::text,
+          'Live'::text,
+          'Recording'::text
+        ]
+      )
     )
-);
+  ),
+  constraint resources_stream_check check (
+    (
+      stream = any (
+        array[
+          'Science'::text,
+          'Arts'::text,
+          'Commerce'::text,
+          'Technology'::text
+        ]
+      )
+    )
+  ),
+  constraint resources_type_check check (
+    (
+      type = any (array['Material'::text, 'Session'::text])
+    )
+  ),
+  constraint resources_level_check check ((level = any (array['AL'::text, 'OL'::text]))),
+  constraint resources_language_check check (
+    (
+      language = any (
+        array['Sinhala'::text, 'Tamil'::text, 'English'::text]
+      )
+    )
+  )
+) TABLESPACE pg_default;
 
--- Contributors can view their own sessions (any status)
-CREATE POLICY "Contributors can view their own sessions"
-ON sessions FOR SELECT
-USING (auth.uid() = contributor_id);
+create index IF not exists idx_resources_type on public.resources using btree (type) TABLESPACE pg_default;
 
--- Anyone can insert sessions
-CREATE POLICY "Anyone can insert sessions"
-ON sessions FOR INSERT
-WITH CHECK (true);
+create index IF not exists idx_resources_level on public.resources using btree (level) TABLESPACE pg_default;
 
--- Contributors can update their own sessions
-CREATE POLICY "Contributors can update their own sessions"
-ON sessions FOR UPDATE
-USING (auth.uid() = contributor_id);
+create index IF not exists idx_resources_stream on public.resources using btree (stream) TABLESPACE pg_default;
 
--- Contributors can delete their own sessions
-CREATE POLICY "Contributors can delete their own sessions"
-ON sessions FOR DELETE
-USING (auth.uid() = contributor_id);
+create index IF not exists idx_resources_subject on public.resources using btree (subject) TABLESPACE pg_default;
 
--- Contributors policies
-CREATE POLICY "Contributors are viewable by everyone"
-ON contributors FOR SELECT
-USING (true);
+create index IF not exists idx_resources_language on public.resources using btree (language) TABLESPACE pg_default;
 
-CREATE POLICY "Users can insert their own profile"
-ON contributors FOR INSERT
-WITH CHECK (auth.uid() = id);
+create index IF not exists idx_resources_category on public.resources using btree (category) TABLESPACE pg_default;
 
-CREATE POLICY "Users can update their own profile"
-ON contributors FOR UPDATE
-USING (auth.uid() = id);
+create index IF not exists idx_resources_contributor on public.resources using btree (contributor_id) TABLESPACE pg_default;
 
--- Subjects policies (read-only for everyone)
-CREATE POLICY "Subjects are viewable by everyone"
-ON subjects FOR SELECT
-USING (true);
+create index IF not exists idx_resources_created_at on public.resources using btree (created_at desc) TABLESPACE pg_default;
 
--- ============================================
--- FUNCTIONS & TRIGGERS
--- ============================================
+create trigger update_resources_updated_at BEFORE
+update on resources for EACH row
+execute FUNCTION update_updated_at_column ();
 
--- Function to automatically create contributor profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.contributors (id, email, full_name, avatar_url)
-    VALUES (
-        NEW.id,
-        NEW.email,
-        NEW.raw_user_meta_data->>'full_name',
-        NEW.raw_user_meta_data->>'avatar_url'
-    );
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger to call function on new user signup
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+create table public.materials (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  title text not null,
+  description text not null,
+  url text not null,
+  category public.material_category not null,
+  level public.resource_level not null,
+  stream public.resource_stream not null,
+  subject text not null,
+  language public.resource_language not null,
+  contributor_id uuid null,
+  contributor_name text null,
+  is_anonymous boolean null default false,
+  status public.approval_status null default 'pending'::approval_status,
+  approved_at timestamp with time zone null,
+  approved_by uuid null,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint materials_pkey primary key (id),
+  constraint materials_approved_by_fkey foreign KEY (approved_by) references auth.users (id),
+  constraint materials_contributor_id_fkey foreign KEY (contributor_id) references auth.users (id) on delete set null
+) TABLESPACE pg_default;
 
--- Function to update the updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = TIMEZONE('utc', NOW());
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+create index IF not exists idx_materials_level on public.materials using btree (level) TABLESPACE pg_default;
 
--- Triggers for updated_at
-DROP TRIGGER IF EXISTS update_materials_updated_at ON materials;
-CREATE TRIGGER update_materials_updated_at
-    BEFORE UPDATE ON materials
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+create index IF not exists idx_materials_stream on public.materials using btree (stream) TABLESPACE pg_default;
 
-DROP TRIGGER IF EXISTS update_sessions_updated_at ON sessions;
-CREATE TRIGGER update_sessions_updated_at
-    BEFORE UPDATE ON sessions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+create index IF not exists idx_materials_subject on public.materials using btree (subject) TABLESPACE pg_default;
 
--- Function to auto-approve resources from authenticated users
-CREATE OR REPLACE FUNCTION auto_approve_authenticated()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.contributor_id IS NOT NULL AND NEW.is_anonymous = false THEN
-        NEW.status = 'approved';
-        NEW.approved_at = TIMEZONE('utc', NOW());
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+create index IF not exists idx_materials_language on public.materials using btree (language) TABLESPACE pg_default;
 
--- Triggers for auto-approval
-DROP TRIGGER IF EXISTS auto_approve_materials ON materials;
-CREATE TRIGGER auto_approve_materials
-    BEFORE INSERT ON materials
-    FOR EACH ROW EXECUTE FUNCTION auto_approve_authenticated();
+create index IF not exists idx_materials_status on public.materials using btree (status) TABLESPACE pg_default;
 
-DROP TRIGGER IF EXISTS auto_approve_sessions ON sessions;
-CREATE TRIGGER auto_approve_sessions
-    BEFORE INSERT ON sessions
-    FOR EACH ROW EXECUTE FUNCTION auto_approve_authenticated();
+create index IF not exists idx_materials_contributor on public.materials using btree (contributor_id) TABLESPACE pg_default;
 
--- ============================================
--- SEED DATA - Subjects
--- ============================================
+create index IF not exists idx_materials_created_at on public.materials using btree (created_at desc) TABLESPACE pg_default;
 
-INSERT INTO subjects (name, stream, level) VALUES
--- AL Science
-('Physics', 'Science', 'AL'),
-('Chemistry', 'Science', 'AL'),
-('Biology', 'Science', 'AL'),
-('Combined Mathematics', 'Science', 'AL'),
-('ICT', 'Science', 'AL'),
--- AL Arts
-('History', 'Arts', 'AL'),
-('Geography', 'Arts', 'AL'),
-('Political Science', 'Arts', 'AL'),
-('Economics', 'Arts', 'AL'),
-('Sinhala', 'Arts', 'AL'),
-('Tamil', 'Arts', 'AL'),
-('English Literature', 'Arts', 'AL'),
--- AL Commerce
-('Accounting', 'Commerce', 'AL'),
-('Business Studies', 'Commerce', 'AL'),
-('Economics', 'Commerce', 'AL'),
-('ICT', 'Commerce', 'AL'),
--- AL Technology
-('Engineering Technology', 'Technology', 'AL'),
-('Bio Systems Technology', 'Technology', 'AL'),
-('Science for Technology', 'Technology', 'AL'),
-('ICT', 'Technology', 'AL'),
--- OL subjects (common)
-('Mathematics', 'Science', 'OL'),
-('Science', 'Science', 'OL'),
-('English', 'Arts', 'OL'),
-('Sinhala', 'Arts', 'OL'),
-('Tamil', 'Arts', 'OL'),
-('History', 'Arts', 'OL'),
-('Geography', 'Arts', 'OL'),
-('Civic Education', 'Arts', 'OL'),
-('Buddhism', 'Arts', 'OL'),
-('Commerce', 'Commerce', 'OL'),
-('Accounting', 'Commerce', 'OL'),
-('ICT', 'Technology', 'OL')
-ON CONFLICT (name, stream, level) DO NOTHING;
+create index IF not exists idx_materials_category on public.materials using btree (category) TABLESPACE pg_default;
+
+create trigger auto_approve_materials BEFORE INSERT on materials for EACH row
+execute FUNCTION auto_approve_authenticated ();
+
+create trigger update_materials_updated_at BEFORE
+update on materials for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+create table public.material_categories (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  code text not null,
+  name text not null,
+  display_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint material_categories_pkey primary key (id),
+  constraint material_categories_code_key unique (code)
+) TABLESPACE pg_default;
+
+
+
+create table public.levels (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  code text not null,
+  name text not null,
+  display_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint levels_pkey primary key (id),
+  constraint levels_code_key unique (code)
+) TABLESPACE pg_default;
+
+
+
+create table public.languages (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  code text not null,
+  name text not null,
+  display_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint languages_pkey primary key (id),
+  constraint languages_code_key unique (code)
+) TABLESPACE pg_default;
+
+
+
+create table public.contributors (
+  id uuid not null,
+  email text not null,
+  full_name text null,
+  avatar_url text null,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint contributors_pkey primary key (id),
+  constraint contributors_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;

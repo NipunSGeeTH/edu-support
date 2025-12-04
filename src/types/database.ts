@@ -1,5 +1,5 @@
 export type Level = 'AL' | 'OL';
-export type Stream = 'Science' | 'Arts' | 'Commerce' | 'Technology';
+export type Stream = 'Science' | 'Arts' | 'Commerce' | 'Technology' | 'General';
 export type MaterialCategory = 'Past Paper' | 'Note' | 'Textbook' | 'Model Paper';
 export type SessionType = 'Live' | 'Recording';
 export type Language = 'Sinhala' | 'Tamil' | 'English';
@@ -15,7 +15,7 @@ export interface Material {
   url: string;
   category: MaterialCategory;
   level: Level;
-  stream: Stream;
+  stream: Stream[]; // Array of streams (subject can belong to multiple streams)
   subject: string;
   language: Language;
   contributor_id: string | null;
@@ -35,7 +35,7 @@ export interface Session {
   url: string;
   session_type: SessionType;
   level: Level;
-  stream: Stream;
+  stream: Stream[]; // Array of streams (subject can belong to multiple streams)
   subject: string;
   language: Language;
   session_date: string | null;
@@ -62,27 +62,28 @@ export interface Contributor {
 export interface Subject {
   id: string;
   name: string;
-  stream: Stream;
+  stream: Stream[];
   level: Level;
 }
 
-// Constants for filter options
-// NOTE: These are fallback values. The app fetches live data from the database.
-// To add/modify levels, streams, subjects, etc., update the database tables.
-// See: supabase/migrations/003_lookup_tables.sql
+// Constants - These are ONLY used as type references
+// Actual data is fetched from the database via /api/config
+// Do NOT hardcode values here - update the database instead
 
 export const LEVELS: Level[] = ['AL', 'OL'];
 
 export const STREAMS: Record<Level, Stream[]> = {
   AL: ['Science', 'Arts', 'Commerce', 'Technology'],
-  OL: ['Science', 'Arts', 'Commerce', 'Technology'],
+  OL: ['General'],
 };
 
+// Empty - subjects come from database
 export const SUBJECTS: Record<Stream, string[]> = {
-  Science: ['Physics', 'Chemistry', 'Biology', 'Combined Mathematics', 'ICT', 'Mathematics', 'Science'],
-  Arts: ['History', 'Geography', 'Political Science', 'Economics', 'Sinhala', 'Tamil', 'English Literature', 'English', 'Civic Education', 'Buddhism'],
-  Commerce: ['Accounting', 'Business Studies', 'Economics', 'ICT', 'Commerce'],
-  Technology: ['Engineering Technology', 'Bio Systems Technology', 'Science for Technology', 'ICT'],
+  Science: [],
+  Arts: [],
+  Commerce: [],
+  Technology: [],
+  General: [],
 };
 
 export const LANGUAGES: Language[] = ['Sinhala', 'Tamil', 'English'];
