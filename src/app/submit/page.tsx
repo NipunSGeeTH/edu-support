@@ -18,17 +18,16 @@ import {
   MATERIAL_CATEGORIES,
   SESSION_TYPES,
 } from '@/types/database';
-import { ArrowLeft, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 type ResourceType = 'material' | 'session';
 
-export default function AddResourcePage() {
+export default function SubmitPage() {
   const router = useRouter();
   const { t } = useLanguage();
 
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<'approved' | 'pending' | null>(null);
@@ -44,6 +43,7 @@ export default function AddResourcePage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   
   // Session timing
   const [sessionDate, setSessionDate] = useState('');
@@ -54,30 +54,25 @@ export default function AddResourcePage() {
   const availableSubjects = SUBJECTS[stream];
 
   useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) return;
+    
     const supabase = createClient();
-
+    
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      
       setUser(user);
-      setIsLoading(false);
     };
-
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        router.push('/login');
-      }
+      setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, []);
 
   // Reset subject when stream changes
   const handleStreamChange = (newStream: Stream) => {
@@ -90,12 +85,6 @@ export default function AddResourcePage() {
     setIsSubmitting(true);
     setError(null);
 
-    if (!user) {
-      setError('You must be logged in to add resources');
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       const supabase = createClient();
       
@@ -107,13 +96,9 @@ export default function AddResourcePage() {
         stream,
         subject,
         language,
-        contributor_id: user.id,
-        contributor_name: user.user_metadata?.full_name || user.email,
-        is_anonymous: false,
-        // Auto-approve for authenticated users
-        status: 'approved' as const,
-        approved_at: new Date().toISOString(),
-        approved_by: user.id,
+        contributor_id: (!isAnonymous && user) ? user.id : null,
+        contributor_name: (!isAnonymous && user) ? (user.user_metadata?.full_name || user.email) : null,
+        is_anonymous: isAnonymous || !user,
       };
 
       let insertError;
@@ -138,7 +123,13 @@ export default function AddResourcePage() {
       if (insertError) {
         setError(insertError.message);
       } else {
-        setSuccess('approved');
+        // Set success state based on whether it will be auto-approved
+        if (user && !isAnonymous) {
+          setSuccess('approved');
+        } else {
+          setSuccess('pending');
+        }
+        
         // Reset form
         setTitle('');
         setDescription('');
@@ -146,49 +137,48 @@ export default function AddResourcePage() {
         setSessionDate('');
         setStartTime('');
         setEndTime('');
-        
-        // Redirect after short delay
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError(t('submit.error'));
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/dashboard"
+          href="/"
           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Dashboard
+          {t('common.back')}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.add_new')}</h1>
-        <p className="text-gray-600">{t('dashboard.add_new_desc')}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('submit.title')}</h1>
+        <p className="text-gray-600">{t('submit.subtitle')}</p>
       </div>
 
       {/* Success Message */}
       {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+        <div className={`mb-6 p-4 rounded-lg flex items-start space-x-3 ${
+          success === 'approved' 
+            ? 'bg-green-50 border border-green-200' 
+            : 'bg-yellow-50 border border-yellow-200'
+        }`}>
+          {success === 'approved' ? (
+            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+          ) : (
+            <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
+          )}
           <div>
-            <p className="font-medium text-green-800">{t('submit.success')}</p>
-            <p className="text-sm text-green-700">{t('submit.success_approved')}</p>
+            <p className={`font-medium ${success === 'approved' ? 'text-green-800' : 'text-yellow-800'}`}>
+              {t('submit.success')}
+            </p>
+            <p className={`text-sm ${success === 'approved' ? 'text-green-700' : 'text-yellow-700'}`}>
+              {success === 'approved' ? t('submit.success_approved') : t('submit.success_pending')}
+            </p>
           </div>
         </div>
       )}
@@ -197,6 +187,19 @@ export default function AddResourcePage() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {/* User Status Banner */}
+      {!user && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Note:</strong> You are not logged in. Your submission will require manual approval.{' '}
+            <Link href="/login" className="underline font-medium">
+              Login with Google
+            </Link>{' '}
+            for instant approval.
+          </p>
         </div>
       )}
 
@@ -276,6 +279,49 @@ export default function AddResourcePage() {
           </div>
         </div>
 
+        {/* Session Timing - Only for Live sessions */}
+        {resourceType === 'session' && sessionType === 'Live' && (
+          <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
+            <h3 className="text-sm font-medium text-purple-900 mb-3">Session Schedule</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm text-purple-700 mb-1">
+                  {t('submit.date')}
+                </label>
+                <input
+                  type="date"
+                  value={sessionDate}
+                  onChange={(e) => setSessionDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-purple-700 mb-1">
+                  {t('submit.start_time')}
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-purple-700 mb-1">
+                  {t('submit.end_time')}
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full p-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Level & Stream */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
@@ -350,51 +396,6 @@ export default function AddResourcePage() {
           </div>
         </div>
 
-        {/* Session Timing (only for Live sessions) */}
-        {resourceType === 'session' && sessionType === 'Live' && (
-          <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-            <h4 className="font-medium text-purple-800 mb-3">Session Schedule</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('submit.date')}
-                </label>
-                <input
-                  type="date"
-                  value={sessionDate}
-                  onChange={(e) => setSessionDate(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('submit.start_time')}
-                </label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('submit.end_time')}
-                </label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Title */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -439,23 +440,54 @@ export default function AddResourcePage() {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <p className="text-sm text-gray-500 mt-1">
-            {resourceType === 'material' ? t('submit.url_hint_material') : t('submit.url_hint_session')}
+            {resourceType === 'material'
+              ? t('submit.url_hint_material')
+              : t('submit.url_hint_session')}
           </p>
         </div>
+
+        {/* Anonymous Checkbox - Only if logged in */}
+        {user && (
+          <div className="mb-6">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">
+                  {t('submit.anonymous')}
+                </span>
+                <p className="text-xs text-gray-500">
+                  {t('submit.anonymous_hint')}
+                </p>
+              </div>
+            </label>
+          </div>
+        )}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          disabled={isSubmitting || success !== null}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            resourceType === 'material'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+          }`}
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <Loader2 className="w-5 h-5 animate-spin" />
               {t('submit.submitting')}
             </>
           ) : (
-            t('submit.button')
+            <>
+              <Plus className="w-5 h-5" />
+              {t('submit.button')}
+            </>
           )}
         </button>
       </form>

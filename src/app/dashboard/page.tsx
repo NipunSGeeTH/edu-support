@@ -1,68 +1,118 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Plus,
   FileText,
   BookOpen,
   Video,
-  User,
+  User as UserIcon,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
-
-export const metadata = {
-  title: 'Contributor Dashboard - EduShare',
-};
 
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
+export default function DashboardPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalMaterials: 0,
+    totalSessions: 0,
+    pendingMaterials: 0,
+    pendingSessions: 0,
+    approvedMaterials: 0,
+    approvedSessions: 0,
+  });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const supabase = createClient();
+
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      
+      setUser(user);
+      
+      // Fetch stats
+      try {
+        const [
+          materialsRes,
+          sessionsRes,
+          pendingMaterialsRes,
+          pendingSessionsRes,
+          approvedMaterialsRes,
+          approvedSessionsRes,
+        ] = await Promise.all([
+          supabase.from('materials').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id),
+          supabase.from('sessions').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id),
+          supabase.from('materials').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id).eq('status', 'pending'),
+          supabase.from('sessions').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id).eq('status', 'pending'),
+          supabase.from('materials').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id).eq('status', 'approved'),
+          supabase.from('sessions').select('*', { count: 'exact', head: true }).eq('contributor_id', user.id).eq('status', 'approved'),
+        ]);
+
+        setStats({
+          totalMaterials: materialsRes.count || 0,
+          totalSessions: sessionsRes.count || 0,
+          pendingMaterials: pendingMaterialsRes.count || 0,
+          pendingSessions: pendingSessionsRes.count || 0,
+          approvedMaterials: approvedMaterialsRes.count || 0,
+          approvedSessions: approvedSessionsRes.count || 0,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+      
+      setIsLoading(false);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        router.push('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   if (!user) {
-    redirect('/login');
+    return null;
   }
 
-  // Fetch contributor's resources count
-  let totalResources = 0;
-  let materialsCount = 0;
-  let sessionsCount = 0;
-
-  try {
-    const [totalRes, matRes, sesRes] = await Promise.all([
-      supabase
-        .from('resources')
-        .select('*', { count: 'exact', head: true })
-        .eq('contributor_id', user.id),
-      supabase
-        .from('resources')
-        .select('*', { count: 'exact', head: true })
-        .eq('contributor_id', user.id)
-        .eq('type', 'Material'),
-      supabase
-        .from('resources')
-        .select('*', { count: 'exact', head: true })
-        .eq('contributor_id', user.id)
-        .eq('type', 'Session'),
-    ]);
-
-    totalResources = totalRes.count || 0;
-    materialsCount = matRes.count || 0;
-    sessionsCount = sesRes.count || 0;
-  } catch (error) {
-    console.error('Error fetching resources:', error);
-  }
+  const totalResources = stats.totalMaterials + stats.totalSessions;
+  const totalPending = stats.pendingMaterials + stats.pendingSessions;
+  const totalApproved = stats.approvedMaterials + stats.approvedSessions;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome Header */}
       <div className="mb-8">
         <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
             {user.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}
@@ -70,30 +120,30 @@ export default async function DashboardPage() {
                 className="w-12 h-12 rounded-full"
               />
             ) : (
-              <User className="w-6 h-6 text-blue-600" />
+              <UserIcon className="w-6 h-6 text-blue-600" />
             )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Welcome, {user.user_metadata?.full_name || user.email}
+              {t('dashboard.welcome', { name: user.user_metadata?.full_name || user.email || '' })}
             </h1>
-            <p className="text-gray-600">Manage your educational resources</p>
+            <p className="text-gray-600">{t('dashboard.subtitle')}</p>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <span className="text-3xl font-bold text-gray-900">
-              {totalResources || 0}
+              {totalResources}
             </span>
           </div>
-          <h3 className="font-medium text-gray-700">Total Resources</h3>
+          <h3 className="font-medium text-gray-700">{t('dashboard.total')}</h3>
           <p className="text-sm text-gray-500">All your contributions</p>
         </div>
 
@@ -103,10 +153,10 @@ export default async function DashboardPage() {
               <BookOpen className="w-5 h-5 text-green-600" />
             </div>
             <span className="text-3xl font-bold text-gray-900">
-              {materialsCount || 0}
+              {stats.totalMaterials}
             </span>
           </div>
-          <h3 className="font-medium text-gray-700">Materials</h3>
+          <h3 className="font-medium text-gray-700">{t('dashboard.materials')}</h3>
           <p className="text-sm text-gray-500">Papers, notes & textbooks</p>
         </div>
 
@@ -116,16 +166,50 @@ export default async function DashboardPage() {
               <Video className="w-5 h-5 text-purple-600" />
             </div>
             <span className="text-3xl font-bold text-gray-900">
-              {sessionsCount || 0}
+              {stats.totalSessions}
             </span>
           </div>
-          <h3 className="font-medium text-gray-700">Sessions</h3>
+          <h3 className="font-medium text-gray-700">{t('dashboard.sessions_count')}</h3>
           <p className="text-sm text-gray-500">Live & recorded classes</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-yellow-600" />
+            </div>
+            <span className="text-3xl font-bold text-gray-900">
+              {totalPending}
+            </span>
+          </div>
+          <h3 className="font-medium text-gray-700">{t('dashboard.pending')}</h3>
+          <p className="text-sm text-gray-500">Awaiting approval</p>
+        </div>
+      </div>
+
+      {/* Status Summary */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <div>
+              <p className="font-medium text-green-800">{totalApproved} Approved</p>
+              <p className="text-sm text-green-600">{stats.approvedMaterials} materials, {stats.approvedSessions} sessions</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <div>
+              <p className="font-medium text-yellow-800">{totalPending} Pending</p>
+              <p className="text-sm text-yellow-600">{stats.pendingMaterials} materials, {stats.pendingSessions} sessions</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link
           href="/dashboard/add"
           className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
@@ -135,10 +219,8 @@ export default async function DashboardPage() {
               <Plus className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Add New Resource</h3>
-              <p className="text-blue-100">
-                Share a new paper, note, or session
-              </p>
+              <h3 className="text-lg font-semibold">{t('dashboard.add_new')}</h3>
+              <p className="text-blue-100">{t('dashboard.add_new_desc')}</p>
             </div>
           </div>
         </Link>
@@ -152,10 +234,23 @@ export default async function DashboardPage() {
               <LayoutDashboard className="w-6 h-6 text-gray-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Manage Resources
-              </h3>
-              <p className="text-gray-600">Edit or delete your resources</p>
+              <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.manage')}</h3>
+              <p className="text-gray-600">{t('dashboard.manage_desc')}</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/dashboard/admin"
+          className="bg-white rounded-xl p-6 border border-yellow-200 hover:border-yellow-300 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Review Submissions</h3>
+              <p className="text-gray-600">Approve pending resources</p>
             </div>
           </div>
         </Link>

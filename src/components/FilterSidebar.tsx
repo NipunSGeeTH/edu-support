@@ -1,22 +1,22 @@
 'use client';
 
-import { Level, Stream, Language, ResourceCategory, LEVELS, STREAMS, SUBJECTS, LANGUAGES } from '@/types/database';
+import { Level, Stream, Language, LEVELS, STREAMS, SUBJECTS, LANGUAGES } from '@/types/database';
 
-interface FilterSidebarProps {
+interface FilterSidebarProps<T extends string> {
   selectedLevel: Level | null;
   selectedStream: Stream | null;
   selectedSubject: string | null;
   selectedLanguage: Language | null;
-  selectedCategory: ResourceCategory | null;
-  categories: ResourceCategory[];
+  selectedCategory: T | null;
+  categories: readonly T[];
   onLevelChange: (level: Level | null) => void;
   onStreamChange: (stream: Stream | null) => void;
   onSubjectChange: (subject: string | null) => void;
   onLanguageChange: (language: Language | null) => void;
-  onCategoryChange: (category: ResourceCategory | null) => void;
+  onCategoryChange: (category: T | null) => void;
 }
 
-export default function FilterSidebar({
+export default function FilterSidebar<T extends string>({
   selectedLevel,
   selectedStream,
   selectedSubject,
@@ -28,7 +28,7 @@ export default function FilterSidebar({
   onSubjectChange,
   onLanguageChange,
   onCategoryChange,
-}: FilterSidebarProps) {
+}: FilterSidebarProps<T>) {
   const availableStreams = selectedLevel ? STREAMS[selectedLevel] : [];
   const availableSubjects = selectedStream ? SUBJECTS[selectedStream] : [];
 

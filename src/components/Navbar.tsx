@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 import { User } from '@supabase/supabase-js';
 import {
   Menu,
@@ -15,10 +17,12 @@ import {
   LogIn,
   LogOut,
   LayoutDashboard,
+  Plus,
 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
@@ -65,10 +69,10 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/materials', label: 'Materials', icon: BookOpen },
-    { href: '/sessions', label: 'Sessions', icon: Video },
-    { href: '/about', label: 'About', icon: Info },
+    { href: '/', label: t('nav.home'), icon: Home },
+    { href: '/materials', label: t('nav.materials'), icon: BookOpen },
+    { href: '/sessions', label: t('nav.sessions'), icon: Video },
+    { href: '/about', label: t('nav.about'), icon: Info },
   ];
 
   return (
@@ -107,8 +111,19 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Auth Section */}
-          <div className="hidden md:flex items-center space-x-3">
+          {/* Auth Section & Language */}
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Submit Resource Button - Available to all */}
+            <Link
+              href="/submit"
+              className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('nav.submit')}</span>
+            </Link>
+            
+            <LanguageSwitcher />
+            
             {user ? (
               <>
                 <Link
@@ -116,14 +131,14 @@ export default function Navbar() {
                   className="flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Dashboard</span>
+                  <span>{t('nav.dashboard')}</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </>
             ) : (
@@ -132,13 +147,14 @@ export default function Navbar() {
                 className="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Contributor Login</span>
+                <span>{t('nav.login')}</span>
               </Link>
             )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-2">
+            <LanguageSwitcher />
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
@@ -172,6 +188,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            
+            {/* Submit Resource - Mobile */}
+            <Link
+              href="/submit"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium text-green-700 bg-green-50"
+            >
+              <Plus className="w-5 h-5" />
+              <span>{t('nav.submit')}</span>
+            </Link>
+            
             <hr className="my-2" />
             {user ? (
               <>
@@ -181,14 +208,14 @@ export default function Navbar() {
                   className="flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
                 >
                   <LayoutDashboard className="w-5 h-5" />
-                  <span>Dashboard</span>
+                  <span>{t('nav.dashboard')}</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 w-full"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span>Sign Out</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </>
             ) : (
@@ -198,7 +225,7 @@ export default function Navbar() {
                 className="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium"
               >
                 <LogIn className="w-5 h-5" />
-                <span>Contributor Login</span>
+                <span>{t('nav.login')}</span>
               </Link>
             )}
           </div>

@@ -1,4 +1,7 @@
+'use client';
+
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   BookOpen,
   Video,
@@ -8,9 +11,12 @@ import {
   GraduationCap,
   Globe,
   Shield,
+  Plus,
 } from "lucide-react";
 
 export default function Home() {
+  const { t } = useLanguage();
+
   return (
     <div>
       {/* Hero Section */}
@@ -18,11 +24,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Learn Without Limits
+              {t('home.title')}
             </h1>
             <p className="text-lg md:text-xl text-blue-100 mb-8">
-              Access free educational resources for A/L and O/L students. Past
-              papers, notes, textbooks, and live sessions - all in one place.
+              {t('home.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -30,16 +35,34 @@ export default function Home() {
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-700 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
               >
                 <BookOpen className="w-5 h-5 mr-2" />
-                Browse Materials
+                {t('home.browse_materials')}
               </Link>
               <Link
                 href="/sessions"
                 className="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-400 transition-colors border border-blue-400"
               >
                 <Video className="w-5 h-5 mr-2" />
-                View Sessions
+                {t('home.view_sessions')}
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Submit Resource Banner */}
+      <section className="bg-gradient-to-r from-green-500 to-emerald-600 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-white font-medium text-center sm:text-left">
+              Have educational resources to share? Anyone can contribute!
+            </p>
+            <Link
+              href="/submit"
+              className="inline-flex items-center px-4 py-2 bg-white text-green-700 rounded-lg font-semibold hover:bg-green-50 transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('nav.submit')}
+            </Link>
           </div>
         </div>
       </section>
@@ -49,11 +72,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Succeed
+              {t('home.features_title')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our platform provides comprehensive educational resources for Sri
-              Lankan students
+              {t('home.features_subtitle')}
             </p>
           </div>
 
@@ -64,11 +86,10 @@ export default function Home() {
                 <FileText className="w-6 h-6 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Past Papers
+                {t('feature.past_papers')}
               </h3>
               <p className="text-gray-600">
-                Access previous years&apos; exam papers with marking schemes for
-                thorough exam preparation.
+                {t('feature.past_papers_desc')}
               </p>
             </div>
 
@@ -78,11 +99,10 @@ export default function Home() {
                 <BookOpen className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Notes & Textbooks
+                {t('feature.notes')}
               </h3>
               <p className="text-gray-600">
-                Comprehensive study notes and textbook PDFs organized by subject
-                and stream.
+                {t('feature.notes_desc')}
               </p>
             </div>
 
@@ -92,11 +112,10 @@ export default function Home() {
                 <Video className="w-6 h-6 text-purple-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Video Sessions
+                {t('feature.sessions')}
               </h3>
               <p className="text-gray-600">
-                Live classes and recorded lessons from experienced educators across
-                all subjects.
+                {t('feature.sessions_desc')}
               </p>
             </div>
 
@@ -106,11 +125,10 @@ export default function Home() {
                 <Globe className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Multiple Languages
+                {t('feature.languages')}
               </h3>
               <p className="text-gray-600">
-                Resources available in Sinhala, Tamil, and English to suit your
-                preferred medium.
+                {t('feature.languages_desc')}
               </p>
             </div>
 
@@ -120,11 +138,10 @@ export default function Home() {
                 <GraduationCap className="w-6 h-6 text-red-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                All Streams Covered
+                {t('feature.streams')}
               </h3>
               <p className="text-gray-600">
-                Science, Arts, Commerce, and Technology streams for both A/L and
-                O/L students.
+                {t('feature.streams_desc')}
               </p>
             </div>
 
@@ -134,11 +151,10 @@ export default function Home() {
                 <Shield className="w-6 h-6 text-yellow-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                100% Free
+                {t('feature.free')}
               </h3>
               <p className="text-gray-600">
-                All resources are completely free. No hidden charges, no premium
-                tiers.
+                {t('feature.free_desc')}
               </p>
             </div>
           </div>
@@ -170,7 +186,7 @@ export default function Home() {
                 <ArrowRight className="w-6 h-6 text-blue-600 group-hover:translate-x-2 transition-transform" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Learning Materials
+                {t('materials.title')}
               </h3>
               <p className="text-gray-600">
                 Past papers, notes, and textbooks for all subjects
@@ -189,7 +205,7 @@ export default function Home() {
                 <ArrowRight className="w-6 h-6 text-purple-600 group-hover:translate-x-2 transition-transform" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Learning Sessions
+                {t('sessions.title')}
               </h3>
               <p className="text-gray-600">
                 Live classes and recorded video lessons
@@ -212,13 +228,22 @@ export default function Home() {
             Join our community of educators and share your resources with
             thousands of students.
           </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            Become a Contributor
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/submit"
+              className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Submit a Resource
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Become a Contributor
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

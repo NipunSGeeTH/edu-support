@@ -1,6 +1,6 @@
 'use client';
 
-import { Resource } from '@/types/database';
+import { Material, Session, MaterialCategory, SessionType } from '@/types/database';
 import {
   FileText,
   BookOpen,
@@ -9,31 +9,59 @@ import {
   Radio,
   ExternalLink,
   Calendar,
+  Clock,
 } from 'lucide-react';
 
+type ResourceItem = Material | Session;
+
 interface ResourceCardProps {
-  resource: Resource;
+  resource: ResourceItem;
+  type: 'material' | 'session';
 }
 
-const categoryIcons = {
+const materialCategoryIcons: Record<MaterialCategory, typeof FileArchive> = {
   'Past Paper': FileArchive,
   'Note': FileText,
   'Textbook': BookOpen,
+};
+
+const sessionTypeIcons: Record<SessionType, typeof Radio> = {
   'Live': Radio,
   'Recording': Video,
 };
 
-const categoryColors = {
+const materialCategoryColors: Record<MaterialCategory, string> = {
   'Past Paper': 'bg-orange-100 text-orange-700',
   'Note': 'bg-blue-100 text-blue-700',
   'Textbook': 'bg-green-100 text-green-700',
+};
+
+const sessionTypeColors: Record<SessionType, string> = {
   'Live': 'bg-red-100 text-red-700',
   'Recording': 'bg-purple-100 text-purple-700',
 };
 
-export default function ResourceCard({ resource }: ResourceCardProps) {
-  const Icon = categoryIcons[resource.category];
-  const colorClass = categoryColors[resource.category];
+export default function ResourceCard({ resource, type }: ResourceCardProps) {
+  const isMaterial = type === 'material';
+  const material = isMaterial ? (resource as Material) : null;
+  const session = !isMaterial ? (resource as Session) : null;
+
+  const Icon = isMaterial 
+    ? materialCategoryIcons[material!.category]
+    : sessionTypeIcons[session!.session_type];
+  
+  const colorClass = isMaterial
+    ? materialCategoryColors[material!.category]
+    : sessionTypeColors[session!.session_type];
+
+  const formatTime = (time: string | null) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-5">
@@ -53,6 +81,22 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
       <p className="text-sm text-gray-600 mb-4 line-clamp-3">
         {resource.description}
       </p>
+
+      {/* Session Schedule Info */}
+      {session?.session_type === 'Live' && session.session_date && (
+        <div className="flex items-center gap-3 text-sm text-gray-600 mb-3 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center">
+            <Calendar className="w-4 h-4 mr-1" />
+            {new Date(session.session_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          </div>
+          {session.start_time && (
+            <div className="flex items-center">
+              <Clock className="w-4 h-4 mr-1" />
+              {formatTime(session.start_time)}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2 mb-4">
         <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
@@ -77,7 +121,7 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
           rel="noopener noreferrer"
           className="flex items-center space-x-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
         >
-          <span>{resource.category === 'Live' ? 'Join' : 'Open'}</span>
+          <span>{session?.session_type === 'Live' ? 'Join' : 'Open'}</span>
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>
