@@ -326,12 +326,12 @@ export default function SessionsPage() {
                     <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                       {session.level}
                     </span>
-                    {parseStreamArray(session.stream).map((s) => (
-                      <span key={s} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                    {parseStreamArray(session.stream).filter(s => s !== 'General').map((s) => (
+                      <span key={s} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
                         {s}
                       </span>
                     ))}
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-medium">
                       {session.subject}
                     </span>
                   </div>

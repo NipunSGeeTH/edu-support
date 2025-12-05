@@ -61,7 +61,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/NipunSGeeTH/edu-support"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"

@@ -294,12 +294,12 @@ export default function MaterialsPage() {
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                         {material.level}
                       </span>
-                      {parseStreamArray(material.stream).map((s) => (
-                        <span key={s} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                      {parseStreamArray(material.stream).filter(s => s !== 'General').map((s) => (
+                        <span key={s} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
                           {s}
                         </span>
                       ))}
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-medium">
                         {material.subject}
                       </span>
                     </div>

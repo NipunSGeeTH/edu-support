@@ -107,11 +107,11 @@ export default function ResourceCard({ resource, type }: ResourceCardProps) {
         </span>
         {/* Display streams - filter out 'General' for cleaner display */}
         {parseStreamArray(resource.stream).filter(s => s !== 'General').map((s) => (
-          <span key={s} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded">
+          <span key={s} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
             {s}
           </span>
         ))}
-        <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-medium">
           {resource.subject}
         </span>
       </div>
