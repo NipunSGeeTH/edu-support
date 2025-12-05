@@ -244,11 +244,8 @@ export default function SessionsPage() {
           {/* Results Count & Clear Filters */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
-              {t('sessions.showing', { 
-                count: sessions.length, 
-                total: totalCount,
-                s: sessions.length !== 1 ? 's' : '' 
-              })}
+              {totalCount} {totalCount === 1 ? 'session' : 'sessions'} found
+              {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
             </p>
             {hasActiveFilters && (
               <button

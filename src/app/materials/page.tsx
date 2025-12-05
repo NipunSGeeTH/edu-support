@@ -241,11 +241,8 @@ export default function MaterialsPage() {
           {/* Results Count & Clear Filters */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
-              {t('materials.showing', { 
-                count: materials.length, 
-                total: totalCount,
-                s: materials.length !== 1 ? 's' : '' 
-              })}
+              {totalCount} {totalCount === 1 ? 'resource' : 'resources'} found
+              {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
             </p>
             {hasActiveFilters && (
               <button
