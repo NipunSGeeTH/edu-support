@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { donationRequestSchema } from '@/lib/validation';
 
 // Initialize Firebase Admin (server-side)
 if (getApps().length === 0) {
-  // For production, use service account
-  // For development, it will use application default credentials
   try {
     initializeApp({
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -42,18 +41,6 @@ function recordSubmission(ip: string): void {
   submissionCache.set(ip, submissions);
 }
 
-// Validate phone number (Sri Lankan format)
-function isValidPhoneNumber(phone: string): boolean {
-  // Sri Lankan phone: 07X XXX XXXX or +947X XXX XXXX
-  const phoneRegex = /^(?:\+94|0)?7[0-9]{8}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
-}
-
-// Sanitize input
-function sanitizeInput(input: string): string {
-  return input.trim().slice(0, 1000); // Limit length and trim
-}
-
 export async function POST(request: NextRequest) {
   try {
     // Get client IP for rate limiting
@@ -69,51 +56,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     // Check honeypot field (should be empty)
-    if (body.website) {
-      // Bot detected - silently reject
-      return NextResponse.json({ success: true }); // Fake success to confuse bots
+    if (body.website || body.email_confirm) {
+      // Bot detected - silently reject with fake success
+      return NextResponse.json({ success: true });
     }
 
-    // Validate required fields
-    const { name, address, district, grade, school, phoneNumber, category, description } = body;
-
-    if (!name || !address || !district || !grade || !school || !phoneNumber || !category || !description) {
+    // Validate with Zod schema
+    const validationResult = donationRequestSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.issues.map((issue) => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      }));
       return NextResponse.json(
-        { error: 'All fields are required.' },
+        { error: 'Validation failed', details: errors },
         { status: 400 }
       );
     }
 
-    // Validate phone number
-    if (!isValidPhoneNumber(phoneNumber)) {
-      return NextResponse.json(
-        { error: 'Please enter a valid Sri Lankan phone number.' },
-        { status: 400 }
-      );
-    }
+    const validatedData = validationResult.data;
 
-    // Validate category
-    const validCategories = ['Books', 'Clothes', 'Stationery', 'Electronics', 'Other'];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json(
-        { error: 'Invalid category selected.' },
-        { status: 400 }
-      );
-    }
-
-    // Sanitize inputs
+    // Prepare sanitized data for storage
     const sanitizedData = {
-      name: sanitizeInput(name),
-      address: sanitizeInput(address),
-      district: sanitizeInput(district),
-      grade: sanitizeInput(grade),
-      school: sanitizeInput(school),
-      phoneNumber: sanitizeInput(phoneNumber),
-      category: category,
-      description: sanitizeInput(description),
+      name: validatedData.name,
+      address: validatedData.address,
+      district: validatedData.district,
+      grade: validatedData.grade,
+      school: validatedData.school,
+      phoneNumber: validatedData.phoneNumber,
+      category: validatedData.category,
+      description: validatedData.description,
       status: 'pending',
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

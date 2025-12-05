@@ -93,14 +93,21 @@ export default function ManageResourcesPage() {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
     setDeletingId(id);
-    const supabase = createClient();
     
-    const table = resourceType === 'material' ? 'materials' : 'sessions';
-    const { error } = await supabase.from(table).delete().eq('id', id);
+    try {
+      // Use server-side API for deletion
+      const response = await fetch(`/api/resources/${id}?type=${resourceType}`, {
+        method: 'DELETE',
+      });
 
-    if (!error) {
-      setResources((prev) => prev.filter((r) => r.id !== id));
-    } else {
+      const result = await response.json();
+
+      if (response.ok) {
+        setResources((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        alert(result.error || 'Failed to delete resource');
+      }
+    } catch (error) {
       alert('Failed to delete resource');
     }
 

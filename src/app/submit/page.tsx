@@ -104,7 +104,7 @@ export default function SubmitPage() {
     setIsSubmitting(true);
     setError(null);
 
-    // Validate
+    // Basic client-side validation (server will validate again)
     if (!subject || subjectStreams.length === 0) {
       setError('Please select a valid subject');
       setIsSubmitting(false);
@@ -112,49 +112,58 @@ export default function SubmitPage() {
     }
 
     try {
-      const supabase = createClient();
-      
-      // Auto-assign streams based on subject from database
-      // For O/L subjects, streams will be ['General']
-      // For A/L multi-stream subjects like ICT, streams will be ['Science', 'Commerce', 'Technology']
-      const streamsToStore = subjectStreams;
-      
-      const baseData = {
-        title,
-        description,
-        url,
-        level,
-        stream: streamsToStore, // Array of streams from database
-        subject,
-        language,
-        contributor_id: (!isAnonymous && user) ? user.id : null,
-        contributor_name: (!isAnonymous && user) ? (user.user_metadata?.full_name || user.email) : null,
-        is_anonymous: isAnonymous || !user,
-      };
+      // Prepare request body for API
+      const requestBody = resourceType === 'material'
+        ? {
+            resourceType: 'material' as const,
+            title,
+            description,
+            url,
+            level,
+            stream: subjectStreams,
+            subject,
+            language,
+            category,
+            isAnonymous: isAnonymous || !user,
+          }
+        : {
+            resourceType: 'session' as const,
+            title,
+            description,
+            url,
+            level,
+            stream: subjectStreams,
+            subject,
+            language,
+            sessionType,
+            sessionDate: sessionType === 'Live' && sessionDate ? sessionDate : null,
+            startTime: sessionType === 'Live' && startTime ? startTime : null,
+            endTime: sessionType === 'Live' && endTime ? endTime : null,
+            isAnonymous: isAnonymous || !user,
+          };
 
-      let insertError;
+      // Call the server-side API for validation and insertion
+      const response = await fetch('/api/resources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      if (resourceType === 'material') {
-        const { error } = await supabase.from('materials').insert({
-          ...baseData,
-          category,
-        });
-        insertError = error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors
+        if (result.details && Array.isArray(result.details)) {
+          const errorMessages = result.details.map((d: { field: string; message: string }) => d.message).join(', ');
+          setError(errorMessages);
+        } else {
+          setError(result.error || 'Failed to submit resource');
+        }
       } else {
-        const { error } = await supabase.from('sessions').insert({
-          ...baseData,
-          session_type: sessionType,
-          session_date: sessionType === 'Live' && sessionDate ? sessionDate : null,
-          start_time: sessionType === 'Live' && startTime ? startTime : null,
-          end_time: sessionType === 'Live' && endTime ? endTime : null,
-        });
-        insertError = error;
-      }
-
-      if (insertError) {
-        setError(insertError.message);
-      } else {
-        if (user && !isAnonymous) {
+        // Success
+        if (result.status === 'approved') {
           setSuccess('approved');
         } else {
           setSuccess('pending');
