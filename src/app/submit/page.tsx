@@ -104,66 +104,75 @@ export default function SubmitPage() {
     setIsSubmitting(true);
     setError(null);
 
-    // Basic client-side validation (server will validate again)
+    // Basic client-side validation
     if (!subject || subjectStreams.length === 0) {
       setError('Please select a valid subject');
       setIsSubmitting(false);
       return;
     }
 
+    // Validate URL format
     try {
-      // Prepare request body for API
-      const requestBody = resourceType === 'material'
-        ? {
-            resourceType: 'material' as const,
-            title,
-            description,
-            url,
-            level,
-            stream: subjectStreams,
-            subject,
-            language,
-            category,
-            isAnonymous: isAnonymous || !user,
-          }
-        : {
-            resourceType: 'session' as const,
-            title,
-            description,
-            url,
-            level,
-            stream: subjectStreams,
-            subject,
-            language,
-            sessionType,
-            sessionDate: sessionType === 'Live' && sessionDate ? sessionDate : null,
-            startTime: sessionType === 'Live' && startTime ? startTime : null,
-            endTime: sessionType === 'Live' && endTime ? endTime : null,
-            isAnonymous: isAnonymous || !user,
-          };
+      new URL(url);
+    } catch {
+      setError('Please enter a valid URL');
+      setIsSubmitting(false);
+      return;
+    }
 
-      // Call the server-side API for validation and insertion
-      const response = await fetch('/api/resources', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+    // Validate title and description length
+    if (title.length < 3) {
+      setError('Title must be at least 3 characters');
+      setIsSubmitting(false);
+      return;
+    }
+    if (description.length < 10) {
+      setError('Description must be at least 10 characters');
+      setIsSubmitting(false);
+      return;
+    }
 
-      const result = await response.json();
+    try {
+      const supabase = createClient();
+      
+      const baseData = {
+        title: title.trim(),
+        description: description.trim(),
+        url: url.trim(),
+        level,
+        stream: subjectStreams,
+        subject,
+        language,
+        contributor_id: (!isAnonymous && user) ? user.id : null,
+        contributor_name: (!isAnonymous && user) ? (user.user_metadata?.full_name || user.email) : null,
+        is_anonymous: isAnonymous || !user,
+        status: (user && !isAnonymous) ? 'approved' : 'pending',
+      };
 
-      if (!response.ok) {
-        // Handle validation errors
-        if (result.details && Array.isArray(result.details)) {
-          const errorMessages = result.details.map((d: { field: string; message: string }) => d.message).join(', ');
-          setError(errorMessages);
-        } else {
-          setError(result.error || 'Failed to submit resource');
-        }
+      let insertError;
+
+      if (resourceType === 'material') {
+        const { error } = await supabase.from('materials').insert({
+          ...baseData,
+          category,
+        });
+        insertError = error;
       } else {
-        // Success
-        if (result.status === 'approved') {
+        const { error } = await supabase.from('sessions').insert({
+          ...baseData,
+          session_type: sessionType,
+          session_date: sessionType === 'Live' && sessionDate ? sessionDate : null,
+          start_time: sessionType === 'Live' && startTime ? startTime : null,
+          end_time: sessionType === 'Live' && endTime ? endTime : null,
+        });
+        insertError = error;
+      }
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        setError(insertError.message || 'Failed to submit resource');
+      } else {
+        if (user && !isAnonymous) {
           setSuccess('approved');
         } else {
           setSuccess('pending');
@@ -179,6 +188,7 @@ export default function SubmitPage() {
         setSubject('');
       }
     } catch (err) {
+      console.error('Submit error:', err);
       setError(t('submit.error'));
     } finally {
       setIsSubmitting(false);
