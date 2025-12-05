@@ -35,6 +35,14 @@ export default function SessionsPage() {
   // Get session types from config
   const sessionTypes = (config?.sessionTypes || []) as SessionType[];
 
+  // Get current date/time in Sri Lanka timezone for filtering
+  const getSriLankaDateTime = () => {
+    const now = new Date();
+    const sriLankaDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }); // YYYY-MM-DD
+    const sriLankaTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour12: false }); // HH:MM:SS
+    return { date: sriLankaDate, time: sriLankaTime };
+  };
+
   // Fetch sessions with filters and search from database
   useEffect(() => {
     const fetchSessions = async () => {
@@ -50,10 +58,18 @@ export default function SessionsPage() {
 
       try {
         const supabase = createClient();
+        const { date: currentDate, time: currentTime } = getSriLankaDateTime();
+        
+        // Build query - filter out expired live sessions
+        // A live session is expired if:
+        // - session_date < today, OR
+        // - session_date = today AND end_time < current_time
+        // Recordings should always be shown
         let query = supabase
           .from('sessions')
           .select('*', { count: 'exact' })
-          .order('session_date', { ascending: true, nullsFirst: false })
+          .eq('status', 'approved')
+          .or(`session_type.eq.Recording,session_date.gt.${currentDate},and(session_date.eq.${currentDate},end_time.gte.${currentTime}),and(session_date.eq.${currentDate},end_time.is.null),session_date.is.null`)
           .order('created_at', { ascending: false });
 
         // Apply filters
@@ -62,8 +78,6 @@ export default function SessionsPage() {
         }
         
         if (selectedStream) {
-          // Use contains for PostgreSQL text[] array column
-          // This checks if the stream array contains the selected value
           query = query.contains('stream', [selectedStream]);
         }
         
@@ -109,7 +123,7 @@ export default function SessionsPage() {
     fetchSessions();
   }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery, currentPage]);
 
-  // Reset to page 1 when filters change (not when page changes)
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery]);
@@ -144,12 +158,30 @@ export default function SessionsPage() {
 
   const isUpcoming = (session: Session) => {
     if (session.session_type !== 'Live' || !session.session_date) return false;
-    
-    // Get current date in Sri Lanka
-    const sriLankaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }); // YYYY-MM-DD format
-    
-    // Session is upcoming if it's today or in the future
-    return session.session_date >= sriLankaDate;
+    const { date: currentDate } = getSriLankaDateTime();
+    return session.session_date >= currentDate;
+  };
+
+  const getSessionTypeColor = (type: SessionType) => {
+    switch (type) {
+      case 'Live':
+        return 'bg-red-100 text-red-800';
+      case 'Recording':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSessionTypeIcon = (type: SessionType) => {
+    switch (type) {
+      case 'Live':
+        return '🔴';
+      case 'Recording':
+        return '📹';
+      default:
+        return '🎥';
+    }
   };
 
   return (
@@ -214,11 +246,7 @@ export default function SessionsPage() {
             <div className="fixed right-0 top-0 bottom-0 w-80 bg-white p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold">{t('filter.title')}</h2>
-                <button 
-                  type="button"
-                  onClick={() => setShowMobileFilters(false)}
-                  aria-label="Close filters"
-                >
+                <button onClick={() => setShowMobileFilters(false)}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -271,83 +299,78 @@ export default function SessionsPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        session.session_type === 'Live' 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {session.session_type === 'Live' ? '🔴 ' : '📹 '}
-                        {session.session_type}
-                      </span>
-                      {isUpcoming(session) && (
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                          Upcoming
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500">{session.language}</span>
-                  </div>
-                  
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {session.title}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {session.description}
-                  </p>
-
-                  {/* Session Schedule */}
-                  {session.session_type === 'Live' && session.session_date && (
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 p-2 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(session.session_date)}
-                      </div>
-                      {session.start_time && (
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {formatTime(session.start_time)}
-                          {session.end_time && ` - ${formatTime(session.end_time)}`}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {session.level}
-                    </span>
-                    {parseStreamArray(session.stream).filter(s => s !== 'General').map((s) => (
-                      <span key={s} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                        {s}
-                      </span>
-                    ))}
-                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-medium">
-                      {session.subject}
-                    </span>
-                  </div>
-                  
-                  <a
-                    href={session.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center text-sm font-medium ${
-                      session.session_type === 'Live' 
-                        ? 'text-red-600 hover:text-red-700' 
-                        : 'text-purple-600 hover:text-purple-700'
-                    }`}
+                  <div
+                    key={session.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
                   >
-                    {session.session_type === 'Live' ? t('common.join') : t('common.open')}
-                    <ExternalLink className="w-4 h-4 ml-1" />
-                  </a>
-                </div>
-              ))}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getSessionTypeColor(session.session_type)}`}>
+                          {getSessionTypeIcon(session.session_type)} {session.session_type}
+                        </span>
+                        {isUpcoming(session) && (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Upcoming
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500">{session.language}</span>
+                    </div>
+                    
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {session.title}
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {session.description}
+                    </p>
+
+                    {/* Session Schedule - Only for Live sessions */}
+                    {session.session_type === 'Live' && session.session_date && (
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {formatDate(session.session_date)}
+                        </div>
+                        {session.start_time && (
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {formatTime(session.start_time)}
+                            {session.end_time && ` - ${formatTime(session.end_time)}`}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {session.level}
+                      </span>
+                      {parseStreamArray(session.stream).filter(s => s !== 'General').map((s) => (
+                        <span key={s} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          {s}
+                        </span>
+                      ))}
+                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-medium">
+                        {session.subject}
+                      </span>
+                    </div>
+                    
+                    <a
+                      href={session.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center text-sm font-medium ${
+                        session.session_type === 'Live' 
+                          ? 'text-red-600 hover:text-red-700' 
+                          : 'text-purple-600 hover:text-purple-700'
+                      }`}
+                    >
+                      {session.session_type === 'Live' ? t('common.join') : t('common.open')}
+                      <ExternalLink className="w-4 h-4 ml-1" />
+                    </a>
+                  </div>
+                ))}
               </div>
 
               {/* Pagination */}
