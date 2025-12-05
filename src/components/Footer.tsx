@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Github, Mail } from 'lucide-react';
+import { Github, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -9,9 +9,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
+              <img 
+                src="/android-chrome-192x192.png" 
+                alt="EduSupport Logo" 
+                className="w-8 h-8 rounded-lg"
+              />
               <span className="font-bold text-xl text-white">EduSupport</span>
             </div>
             <p className="text-gray-400 max-w-md">

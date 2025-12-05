@@ -287,7 +287,7 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'feature.free_desc': 'ඔබගේ ප්‍රජා බෙදා ගන්නා සියලුම සම්පත්. බාධ නැත, ගාස්තු නැත, සිර්ෂ පමණ ශික්ෂණ මගින් ඡඳිය.',
     
     // Filters
-    'filter.title': 'පෙරහන්',
+    'filter.title': 'තෝරන්න',
     'filter.level': 'මට්ටම',
     'filter.stream': 'ධාරාව',
     'filter.subject': 'විෂය',
