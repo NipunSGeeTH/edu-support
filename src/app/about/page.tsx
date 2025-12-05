@@ -13,7 +13,7 @@ export default function AboutPage() {
       <div className="text-center mb-16">
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6">
           <img 
-            src="/android-chrome-192x192.png" 
+            src="logo.avif" 
             alt="EduSupport Logo" 
             className="w-20 h-20 rounded-full"
           />
