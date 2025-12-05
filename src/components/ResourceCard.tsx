@@ -1,6 +1,7 @@
 'use client';
 
 import { Material, Session, MaterialCategory, SessionType } from '@/types/database';
+import { parseStreamArray } from '@/lib/utils';
 import {
   FileText,
   BookOpen,
@@ -105,7 +106,7 @@ export default function ResourceCard({ resource, type }: ResourceCardProps) {
           {resource.level}
         </span>
         {/* Display streams - filter out 'General' for cleaner display */}
-        {resource.stream?.filter(s => s !== 'General').map((s) => (
+        {parseStreamArray(resource.stream).filter(s => s !== 'General').map((s) => (
           <span key={s} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded">
             {s}
           </span>

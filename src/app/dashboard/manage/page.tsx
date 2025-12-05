@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { parseStreamArray } from '@/lib/utils';
 import { Material, Session } from '@/types/database';
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
@@ -255,9 +256,11 @@ export default function ManageResourcesPage() {
                           <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
                             {resource.level}
                           </span>
-                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
-                            {resource.stream}
-                          </span>
+                          {parseStreamArray(resource.stream).map((s) => (
+                            <span key={s} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
+                              {s}
+                            </span>
+                          ))}
                           <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
                             {resource.subject}
                           </span>

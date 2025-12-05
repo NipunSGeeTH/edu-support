@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import FilterSidebar from '@/components/FilterSidebar';
+import { parseStreamArray } from '@/lib/utils';
 import {
   Session,
   Level,
   Stream,
   Language,
   SessionType,
-  SESSION_TYPES,
 } from '@/types/database';
-import { Video, Search, Filter, X, ExternalLink, Calendar, Clock } from 'lucide-react';
+import { Video, Search, Filter, X, ExternalLink, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function SessionsPage() {
   const { t } = useLanguage();
+  const { config } = useConfig();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
@@ -26,8 +29,13 @@ export default function SessionsPage() {
   const [selectedCategory, setSelectedCategory] = useState<SessionType | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // Fetch sessions from Supabase
+  // Get session types from config
+  const sessionTypes = (config?.sessionTypes || []) as SessionType[];
+
+  // Fetch sessions with filters and search from database
   useEffect(() => {
     const fetchSessions = async () => {
       setIsLoading(true);
@@ -42,18 +50,54 @@ export default function SessionsPage() {
 
       try {
         const supabase = createClient();
-        // RLS policy filters out expired live sessions and non-approved sessions
-        // Sessions are filtered at database level using Sri Lankan time
-        const { data, error } = await supabase
+        let query = supabase
           .from('sessions')
-          .select('*')
+          .select('*', { count: 'exact' })
           .order('session_date', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
+
+        // Apply filters
+        if (selectedLevel) {
+          query = query.eq('level', selectedLevel);
+        }
+        
+        if (selectedStream) {
+          // Use contains for PostgreSQL text[] array column
+          // This checks if the stream array contains the selected value
+          query = query.contains('stream', [selectedStream]);
+        }
+        
+        if (selectedSubject) {
+          query = query.eq('subject', selectedSubject);
+        }
+        
+        if (selectedLanguage) {
+          query = query.eq('language', selectedLanguage);
+        }
+        
+        if (selectedCategory) {
+          query = query.eq('session_type', selectedCategory);
+        }
+
+        // Apply search on title, description, or subject
+        if (searchQuery) {
+          query = query.or(
+            `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`
+          );
+        }
+
+        // Apply pagination
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
 
         if (error) {
           console.error('Error fetching sessions:', error);
         } else if (data) {
           setSessions(data);
+          setTotalCount(count || 0);
         }
       } catch (err) {
         console.error('Error:', err);
@@ -63,53 +107,12 @@ export default function SessionsPage() {
     };
 
     fetchSessions();
-  }, []);
+  }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery, currentPage]);
 
-  // Filter sessions based on selections
+  // Reset to page 1 when filters change (not when page changes)
   useEffect(() => {
-    let filtered = sessions;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.title.toLowerCase().includes(query) ||
-          s.description.toLowerCase().includes(query) ||
-          s.subject.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedLevel) {
-      filtered = filtered.filter((s) => s.level === selectedLevel);
-    }
-
-    if (selectedStream) {
-      // Stream is now an array - check if the selected stream is in the array
-      filtered = filtered.filter((s) => s.stream?.includes(selectedStream));
-    }
-
-    if (selectedSubject) {
-      filtered = filtered.filter((s) => s.subject === selectedSubject);
-    }
-
-    if (selectedLanguage) {
-      filtered = filtered.filter((s) => s.language === selectedLanguage);
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter((s) => s.session_type === selectedCategory);
-    }
-
-    setFilteredSessions(filtered);
-  }, [
-    sessions,
-    searchQuery,
-    selectedLevel,
-    selectedStream,
-    selectedSubject,
-    selectedLanguage,
-    selectedCategory,
-  ]);
+    setCurrentPage(1);
+  }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery]);
 
   const clearFilters = () => {
     setSelectedLevel(null);
@@ -118,9 +121,11 @@ export default function SessionsPage() {
     setSelectedLanguage(null);
     setSelectedCategory(null);
     setSearchQuery('');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = selectedLevel || selectedStream || selectedSubject || selectedLanguage || selectedCategory || searchQuery;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const formatTime = (time: string | null) => {
     if (!time) return '';
@@ -193,7 +198,7 @@ export default function SessionsPage() {
             selectedSubject={selectedSubject}
             selectedLanguage={selectedLanguage}
             selectedCategory={selectedCategory}
-            categories={SESSION_TYPES}
+            categories={sessionTypes}
             onLevelChange={setSelectedLevel}
             onStreamChange={setSelectedStream}
             onSubjectChange={setSelectedSubject}
@@ -223,7 +228,7 @@ export default function SessionsPage() {
                 selectedSubject={selectedSubject}
                 selectedLanguage={selectedLanguage}
                 selectedCategory={selectedCategory}
-                categories={SESSION_TYPES}
+                categories={sessionTypes}
                 onLevelChange={setSelectedLevel}
                 onStreamChange={setSelectedStream}
                 onSubjectChange={setSelectedSubject}
@@ -239,7 +244,11 @@ export default function SessionsPage() {
           {/* Results Count & Clear Filters */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
-              {t('sessions.showing', { count: filteredSessions.length, s: filteredSessions.length !== 1 ? 's' : '' })}
+              {t('sessions.showing', { 
+                count: sessions.length, 
+                total: totalCount,
+                s: sessions.length !== 1 ? 's' : '' 
+              })}
             </p>
             {hasActiveFilters && (
               <button
@@ -255,15 +264,16 @@ export default function SessionsPage() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
             </div>
-          ) : filteredSessions.length === 0 ? (
+          ) : sessions.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
               <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">{t('sessions.no_results')}</h3>
               <p className="text-gray-600">{t('sessions.no_results_hint')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredSessions.map((session) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                {sessions.map((session) => (
                 <div
                   key={session.id}
                   className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
@@ -316,9 +326,11 @@ export default function SessionsPage() {
                     <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                       {session.level}
                     </span>
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {session.stream}
-                    </span>
+                    {parseStreamArray(session.stream).map((s) => (
+                      <span key={s} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {s}
+                      </span>
+                    ))}
                     <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                       {session.subject}
                     </span>
@@ -339,7 +351,45 @@ export default function SessionsPage() {
                   </a>
                 </div>
               ))}
-            </div>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-lg ${
+                          currentPage === page
+                            ? 'bg-purple-600 text-white'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

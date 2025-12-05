@@ -251,10 +251,10 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'nav.sessions': 'පන්ති',
     'nav.about': 'අප ගැන',
     'nav.dashboard': 'පාලක පුවරුව',
-    'nav.login': 'දායක පිවිසුම',
+    'nav.login': 'Login වෙන්න',
     'nav.logout': 'පිටවීම',
-    'nav.submit': 'සම්පත් ඉදිරිපත් කරන්න',
-    
+    'nav.submit': 'අලුත් නෝට්ස් / වීඩියෝ දාන්න',
+
     // Home page
     'home.title': 'දැනුම තුළින් අනාගතය නැවත ගොඩනගමු.',
     'home.subtitle': 'ගුරුවරුන්, ස්වේච්ඡා සේවකයින් සහ සැවෙසින් පුද්ගලයින් දැනුම බෙදා ගනිමින්. අර්බුද සම්පූර්ණයි සිසුන් ඉගෙනුම දිගටම කරන පරිදි නිදහස් අධ්‍යාපනික සම්පත්.',
@@ -263,7 +263,7 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'home.banner': 'ශ්‍රී ලාංකික සිසු දූ දරුවන්ගේ අනාගතය උදෙසා එක්වී පෙළ ගැසෙමු.',
     'home.quick_access': 'ඉක්මන් ප්‍රවේශ',
     'home.materials_desc': 'සියලුම විෂයන් සඳහා පසුගිය ප්‍රශ්න පත්‍ර, සටහන් සහ පාඩම් නිර්දේශ',
-    'home.sessions_desc': 'සජීවී පන්ති සහ පටිගත වීඩියෝ පාඩම්',
+    'home.sessions_desc': 'සජීවී පන්ති සහ පටිගත කල වීඩියෝ පාඩම්',
     'home.submit_desc': 'ඔබේ අධ්‍යාපනික සම්පත් ප්‍රජාව සමඟ බෙදා ගන්න',
     'home.educational_support': 'අධ්‍යාපනික සහාය',
     'home.educational_support_desc': 'අධ්‍යාපනික ආධාර ලබන්න හෝ දෙන්න - පොත්, ඇඳුම්, ලිපින ද්‍රව්‍ය සහ තවත්',
@@ -308,7 +308,7 @@ export const translations: Record<UILanguage, Record<string, string>> = {
     'materials.no_results_hint': 'ඔබේ පෙරහන් හෝ සෙවුම් විමසුම වෙනස් කර බලන්න',
     
     // Sessions page
-    'sessions.title': 'සජීවී සහ පටිගත පන්ති',
+    'sessions.title': 'සජීවී සහ පටිගත කල පන්ති',
     'sessions.subtitle': 'ගුරුවරුන් සහ උපදේශකයින් සම්බන්ධ වන්න. ඔබගේ ප්‍රජා බෙදා ගන්නා පටිගත පන්ති සිට ඉගෙන ගන්න.',
     'sessions.search': 'පන්ති සොයන්න...',
     'sessions.showing': 'පන්ති {count}ක් පෙන්වයි',

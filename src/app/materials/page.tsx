@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import FilterSidebar from '@/components/FilterSidebar';
+import { parseStreamArray } from '@/lib/utils';
 import {
   Material,
   Level,
   Stream,
   Language,
   MaterialCategory,
-  MATERIAL_CATEGORIES,
 } from '@/types/database';
-import { BookOpen, Search, Filter, X, ExternalLink, FileText } from 'lucide-react';
+import { BookOpen, Search, Filter, X, ExternalLink, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function MaterialsPage() {
   const { t } = useLanguage();
+  const { config } = useConfig();
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
@@ -26,8 +29,13 @@ export default function MaterialsPage() {
   const [selectedCategory, setSelectedCategory] = useState<MaterialCategory | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // Fetch materials from Supabase
+  // Get categories from config
+  const categories = (config?.materialCategories || []) as MaterialCategory[];
+
+  // Fetch materials with filters and search from database
   useEffect(() => {
     const fetchMaterials = async () => {
       setIsLoading(true);
@@ -42,16 +50,54 @@ export default function MaterialsPage() {
 
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
+        let query = supabase
           .from('materials')
-          .select('*')
+          .select('*', { count: 'exact' })
           .eq('status', 'approved')
           .order('created_at', { ascending: false });
+
+        // Apply filters
+        if (selectedLevel) {
+          query = query.eq('level', selectedLevel);
+        }
+        
+        if (selectedStream) {
+          // Use contains for PostgreSQL text[] array column
+          // This checks if the stream array contains the selected value
+          query = query.contains('stream', [selectedStream]);
+        }
+        
+        if (selectedSubject) {
+          query = query.eq('subject', selectedSubject);
+        }
+        
+        if (selectedLanguage) {
+          query = query.eq('language', selectedLanguage);
+        }
+        
+        if (selectedCategory) {
+          query = query.eq('category', selectedCategory);
+        }
+
+        // Apply search on title, description, or subject
+        if (searchQuery) {
+          query = query.or(
+            `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`
+          );
+        }
+
+        // Apply pagination
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
 
         if (error) {
           console.error('Error fetching materials:', error);
         } else if (data) {
           setMaterials(data);
+          setTotalCount(count || 0);
         }
       } catch (err) {
         console.error('Error:', err);
@@ -61,53 +107,12 @@ export default function MaterialsPage() {
     };
 
     fetchMaterials();
-  }, []);
+  }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery, currentPage]);
 
-  // Filter materials based on selections
+  // Reset to page 1 when filters change (not when page changes)
   useEffect(() => {
-    let filtered = materials;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (m) =>
-          m.title.toLowerCase().includes(query) ||
-          m.description.toLowerCase().includes(query) ||
-          m.subject.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedLevel) {
-      filtered = filtered.filter((m) => m.level === selectedLevel);
-    }
-
-    if (selectedStream) {
-      // Stream is now an array - check if the selected stream is in the array
-      filtered = filtered.filter((m) => m.stream?.includes(selectedStream));
-    }
-
-    if (selectedSubject) {
-      filtered = filtered.filter((m) => m.subject === selectedSubject);
-    }
-
-    if (selectedLanguage) {
-      filtered = filtered.filter((m) => m.language === selectedLanguage);
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter((m) => m.category === selectedCategory);
-    }
-
-    setFilteredMaterials(filtered);
-  }, [
-    materials,
-    searchQuery,
-    selectedLevel,
-    selectedStream,
-    selectedSubject,
-    selectedLanguage,
-    selectedCategory,
-  ]);
+    setCurrentPage(1);
+  }, [selectedLevel, selectedStream, selectedSubject, selectedLanguage, selectedCategory, searchQuery]);
 
   const clearFilters = () => {
     setSelectedLevel(null);
@@ -116,9 +121,11 @@ export default function MaterialsPage() {
     setSelectedLanguage(null);
     setSelectedCategory(null);
     setSearchQuery('');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = selectedLevel || selectedStream || selectedSubject || selectedLanguage || selectedCategory || searchQuery;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const getCategoryIcon = (category: MaterialCategory) => {
     switch (category) {
@@ -192,7 +199,7 @@ export default function MaterialsPage() {
             selectedSubject={selectedSubject}
             selectedLanguage={selectedLanguage}
             selectedCategory={selectedCategory}
-            categories={MATERIAL_CATEGORIES}
+            categories={categories}
             onLevelChange={setSelectedLevel}
             onStreamChange={setSelectedStream}
             onSubjectChange={setSelectedSubject}
@@ -218,7 +225,7 @@ export default function MaterialsPage() {
                 selectedSubject={selectedSubject}
                 selectedLanguage={selectedLanguage}
                 selectedCategory={selectedCategory}
-                categories={MATERIAL_CATEGORIES}
+                categories={categories}
                 onLevelChange={setSelectedLevel}
                 onStreamChange={setSelectedStream}
                 onSubjectChange={setSelectedSubject}
@@ -234,7 +241,11 @@ export default function MaterialsPage() {
           {/* Results Count & Clear Filters */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
-              {t('materials.showing', { count: filteredMaterials.length, s: filteredMaterials.length !== 1 ? 's' : '' })}
+              {t('materials.showing', { 
+                count: materials.length, 
+                total: totalCount,
+                s: materials.length !== 1 ? 's' : '' 
+              })}
             </p>
             {hasActiveFilters && (
               <button
@@ -250,58 +261,99 @@ export default function MaterialsPage() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : filteredMaterials.length === 0 ? (
+          ) : materials.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">{t('materials.no_results')}</h3>
               <p className="text-gray-600">{t('materials.no_results_hint')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredMaterials.map((material) => (
-                <div
-                  key={material.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(material.category)}`}>
-                      {getCategoryIcon(material.category)} {material.category}
-                    </span>
-                    <span className="text-xs text-gray-500">{material.language}</span>
-                  </div>
-                  
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {material.title}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {material.description}
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {material.level}
-                    </span>
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {material.stream}
-                    </span>
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {material.subject}
-                    </span>
-                  </div>
-                  
-                  <a
-                    href={material.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                {materials.map((material) => (
+                  <div
+                    key={material.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
                   >
-                    {t('common.open')}
-                    <ExternalLink className="w-4 h-4 ml-1" />
-                  </a>
+                    <div className="flex items-start justify-between mb-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(material.category)}`}>
+                        {getCategoryIcon(material.category)} {material.category}
+                      </span>
+                      <span className="text-xs text-gray-500">{material.language}</span>
+                    </div>
+                    
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {material.title}
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {material.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {material.level}
+                      </span>
+                      {parseStreamArray(material.stream).map((s) => (
+                        <span key={s} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          {s}
+                        </span>
+                      ))}
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {material.subject}
+                      </span>
+                    </div>
+                    
+                    <a
+                      href={material.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {t('common.open')}
+                      <ExternalLink className="w-4 h-4 ml-1" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-lg ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
