@@ -17,9 +17,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduSupport - Educational Resource Sharing Platform",
+  title: "EduSupport - A/L & O/L Educational Resource Sharing Platform",
   description:
-    "A free educational resource sharing platform for Sri Lankan students. Access past papers, notes, textbooks, and learning sessions.",
+    "A free educational resource sharing platform for Sri Lankan A/L and O/L students. Access past papers, notes, textbooks, and learning sessions.",
+  keywords:
+    "A/L, O/L, advanced level, ordinary level, education, study resources, past papers, notes, textbooks, learning sessions, Sri Lanka, student help, peer learning, exam preparation",
+  openGraph: {
+    title: "EduSupport - A/L & O/L Educational Resource Sharing Platform",
+    description: "A free educational resource sharing platform for Sri Lankan A/L and O/L students. Access past papers, notes, textbooks, and learning sessions.",
+    url: "https://edu.kuppihub.org",
+    type: "website",
+    images: [
+      {
+        url: "https://edu.kuppihub.org/logo.png",
+        width: 512,
+        height: 512,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EduSupport - A/L & O/L Educational Resource Sharing Platform",
+    description: "Free A/L and O/L educational resources for Sri Lankan students, by students.",
+    images: ["https://edu.kuppihub.org/logo.png"],
+  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
